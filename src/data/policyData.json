@@ -1,0 +1,661 @@
+[
+  {
+    "period": "市场化启动期",
+    "periodRange": "1998-2002",
+    "policies": [
+      {
+        "id": "policy_1998_07",
+        "date": "1998-07",
+        "title": "房改破冰 - 停止福利分房",
+        "content": "国务院发布《关于进一步深化城镇住房制度改革加快住房建设的通知》(国发〔1998〕23 号)，停止福利分房，推行住房分配货币化，商品房市场正式启动。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "新开工面积从 1999 年 4.01 亿㎡增至 2002 年 7.74 亿㎡，年均增长 24%；城镇化率加速提升，释放大量住房需求。"
+      }
+    ]
+  },
+  {
+    "period": "高速扩张期",
+    "periodRange": "2003-2011",
+    "policies": [
+      {
+        "id": "policy_2003_06",
+        "date": "2003-06",
+        "title": "首次调控 - 央行121号文件",
+        "content": "央行发布 121 号文件，提高房贷首付比例至 20%，贷款利率上浮，抑制投资性购房。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "一线城市房价增速放缓，投机性需求下降，市场回归理性。"
+      },
+      {
+        "id": "policy_2005_03",
+        "date": "2005-03",
+        "title": "国八条",
+        "content": "国务院出台稳定房价八项措施，强调地方政府责任，增加普通商品房供应。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "全国房价涨幅回落，部分城市出现短期调整。"
+      },
+      {
+        "id": "policy_2006_05",
+        "date": "2006-05",
+        "title": "国六条与90/70政策",
+        "content": "九部委联合发文，要求新审批项目 90㎡以下户型占比≥70%。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "住房供应结构优化，小户型比例提升，刚需得到更好满足。"
+      },
+      {
+        "id": "policy_2008_10",
+        "date": "2008-10",
+        "title": "四万亿刺激计划",
+        "content": "\"四万亿\" 刺激计划出台，房地产获约 1.5 万亿支持，首付降至 20%，利率打 7 折。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "市场 V 型反转，2009 年一线城市房价同比上涨 50% 以上，\"地王\" 频现。"
+      },
+      {
+        "id": "policy_2010_04",
+        "date": "2010-04",
+        "title": "国十条 - 限购限贷",
+        "content": "\"国十条\" 出台，限购限贷：二套首付 50%，利率 1.1 倍，非户籍限购 1 套。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "热点城市房价增速回落，部分城市出现下跌，投资投机性需求被抑制。"
+      },
+      {
+        "id": "policy_2010_10",
+        "date": "2010-10",
+        "title": "多城市跟进限购",
+        "content": "广州、北京等 40 余城跟进限购。",
+        "affectedProvinces": [
+          110000,
+          440000,
+          310000,
+          320000,
+          330000,
+          500000
+        ],
+        "affectedProvinceNames": [
+          "北京",
+          "广东",
+          "上海",
+          "江苏",
+          "浙江",
+          "重庆"
+        ],
+        "impact": "热点城市房价增速回落，部分城市出现下跌，投资投机性需求被抑制。"
+      },
+      {
+        "id": "policy_2011_01",
+        "date": "2011-01",
+        "title": "房产税试点",
+        "content": "上海、重庆试点房产税。",
+        "affectedProvinces": [
+          310000,
+          500000
+        ],
+        "affectedProvinceNames": [
+          "上海",
+          "重庆"
+        ],
+        "impact": "试点城市房价增速回落，投资投机性需求被抑制。"
+      }
+    ]
+  },
+  {
+    "period": "调整深化期",
+    "periodRange": "2013-2018",
+    "policies": [
+      {
+        "id": "policy_2013_02",
+        "date": "2013-02",
+        "title": "新国五条",
+        "content": "加码限购限价，二手房交易个税按 20% 征收。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "一线城市房价短期波动，市场观望情绪浓厚。"
+      },
+      {
+        "id": "policy_2014_09",
+        "date": "2014-09",
+        "title": "放松限购",
+        "content": "央行放松限购，30 余城取消或放宽限购。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "市场回暖，三四线城市库存下降。"
+      },
+      {
+        "id": "policy_2015",
+        "date": "2015",
+        "title": "棚改货币化启动",
+        "content": "棚改货币化启动，三四线城市库存去化加速。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "三四线城市库存下降，市场回暖。"
+      },
+      {
+        "id": "policy_2016_02",
+        "date": "2016-02",
+        "title": "契税新政",
+        "content": "契税新政：90㎡以下首套房契税 1%，90㎡以上 1.5%；二套房 90㎡以下 1%，90㎡以上 2%。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "市场回暖，2016 年一线城市房价大涨（深圳 + 57%），三四线库存下降。"
+      },
+      {
+        "id": "policy_2016_09",
+        "date": "2016-09",
+        "title": "房住不炒定调",
+        "content": "中央政治局会议首次明确 \"房子是用来住的、不是用来炒的\"。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "热点城市再度收紧，2017 年 3 月起多城推出限售政策，投资性需求减弱。"
+      }
+    ]
+  },
+  {
+    "period": "高质量发展期",
+    "periodRange": "2019-2025",
+    "policies": [
+      {
+        "id": "policy_2020_08",
+        "date": "2020-08",
+        "title": "三道红线政策",
+        "content": "\"三道红线\" 政策出台，限制房企负债扩张。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "房企降负债、控扩张，部分高杠杆企业风险暴露。"
+      },
+      {
+        "id": "policy_2021_09",
+        "date": "2021-09",
+        "title": "恒大暴雷",
+        "content": "恒大暴雷，行业债务危机爆发。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "市场深度调整，行业债务危机爆发。"
+      },
+      {
+        "id": "policy_2022_11",
+        "date": "2022-11",
+        "title": "金融16条",
+        "content": "\"金融 16 条\" 出台，保交楼、稳民生。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "市场深度调整，2022 年商品房销售面积同比 - 24.3%，70 城房价连续 16 个月下跌。"
+      },
+      {
+        "id": "policy_2023_08",
+        "date": "2023-08",
+        "title": "二次房改启动",
+        "content": "二次房改启动，大规模推进保障性住房建设。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "保障性住房建设加速，市场结构优化。"
+      },
+      {
+        "id": "policy_2024_05",
+        "date": "2024-05",
+        "title": "5・17新政",
+        "content": "\"5・17 新政\"：首套首付降至 15%，二套降至 20%，利率下调。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "市场交易活跃度提升，购房门槛降低。"
+      },
+      {
+        "id": "policy_2024_09",
+        "date": "2024-09",
+        "title": "促进房地产市场止跌回稳",
+        "content": "中央政治局会议首提 \"促进房地产市场止跌回稳\"。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "政策信号明确，市场预期改善。"
+      },
+      {
+        "id": "policy_2025_07",
+        "date": "2025-07",
+        "title": "现房销售制度确立",
+        "content": "现房销售制度确立，2026 年 1 月起新出让土地项目实施。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "房地产市场新模式构建，预售制度逐步退出。"
+      }
+    ]
+  },
+  {
+    "period": "一线城市政策调整",
+    "periodRange": "2024-2025",
+    "policies": [
+      {
+        "id": "policy_guangzhou_2024_01",
+        "date": "2024-01",
+        "title": "广州放开120㎡以上住房限购",
+        "content": "放开 120㎡以上住房限购。",
+        "affectedProvinces": [
+          440000
+        ],
+        "affectedProvinceNames": [
+          "广东"
+        ],
+        "impact": "政策后一周新房成交环比 + 40%，二手房 + 65%。"
+      },
+      {
+        "id": "policy_guangzhou_2024_09",
+        "date": "2024-09",
+        "title": "广州全面取消限购限售限价",
+        "content": "全面取消限购、限售、限价，终结 14 年限购历史。",
+        "affectedProvinces": [
+          440000
+        ],
+        "affectedProvinceNames": [
+          "广东"
+        ],
+        "impact": "政策后一周新房成交环比 + 40%，二手房 + 65%；2024 年底常住人口 + 12 万，为近三年新高。"
+      },
+      {
+        "id": "policy_beijing_2024_04",
+        "date": "2024-04",
+        "title": "北京五环外松绑",
+        "content": "允许已限购家庭在五环外新购 1 套。",
+        "affectedProvinces": [
+          110000
+        ],
+        "affectedProvinceNames": [
+          "北京"
+        ],
+        "impact": "五环外成交激增，价格上涨。"
+      },
+      {
+        "id": "policy_beijing_2025_08",
+        "date": "2025-08",
+        "title": "北京五环外全面取消限购",
+        "content": "五环外全面取消限购，非京籍社保要求从 5 年降至 2 年。",
+        "affectedProvinces": [
+          110000
+        ],
+        "affectedProvinceNames": [
+          "北京"
+        ],
+        "impact": "五环外成交激增 120%，价格上涨 5-8%，中心城区稳定，形成 \"外热内稳\" 格局。"
+      },
+      {
+        "id": "policy_shanghai_2025_08",
+        "date": "2025-08",
+        "title": "上海外环外松绑 - 沪六条",
+        "content": "\"沪六条\"：外环外符合条件家庭（户籍或 1 年社保）购房不限套数。",
+        "affectedProvinces": [
+          310000
+        ],
+        "affectedProvinceNames": [
+          "上海"
+        ],
+        "impact": "外环外一周成交环比 + 75%，五大新城热度提升，房价涨 3-5%，人才落户环比 + 60%。"
+      },
+      {
+        "id": "policy_shenzhen_2025_09",
+        "date": "2025-09",
+        "title": "深圳分区调控",
+        "content": "分区施策：罗湖、龙岗等六区取消限购；福田、南山等核心区限购放宽；盐田、大鹏完全市场化，不限购。",
+        "affectedProvinces": [
+          440000
+        ],
+        "affectedProvinceNames": [
+          "广东"
+        ],
+        "impact": "取消限购区域成交 + 35%，龙岗、龙华成交量翻倍，核心区价格稳定。"
+      }
+    ]
+  },
+  {
+    "period": "热点二线城市政策",
+    "periodRange": "2024-2025",
+    "policies": [
+      {
+        "id": "policy_hangzhou_2024_03",
+        "date": "2024-03",
+        "title": "杭州取消二手房限购",
+        "content": "取消二手房限购，增值税 \"5 改 2\"。",
+        "affectedProvinces": [
+          330000
+        ],
+        "affectedProvinceNames": [
+          "浙江"
+        ],
+        "impact": "二手房成交活跃度提升。"
+      },
+      {
+        "id": "policy_hangzhou_2024_05",
+        "date": "2024-05",
+        "title": "杭州取消新房限购",
+        "content": "取消新房限购。",
+        "affectedProvinces": [
+          330000
+        ],
+        "affectedProvinceNames": [
+          "浙江"
+        ],
+        "impact": "新房成交活跃度提升。"
+      },
+      {
+        "id": "policy_hangzhou_2024_10",
+        "date": "2024-10",
+        "title": "杭州全面松绑",
+        "content": "取消限价限售，商业贷款不区分首套二套。",
+        "affectedProvinces": [
+          330000
+        ],
+        "affectedProvinceNames": [
+          "浙江"
+        ],
+        "impact": "2024 年二手房成交 9.4 万套创四年新高，首次超新房；四季度主城区房价环比 + 2.3%。"
+      },
+      {
+        "id": "policy_chengdu_2024_04",
+        "date": "2024-04",
+        "title": "成都取消限购",
+        "content": "取消限购。",
+        "affectedProvinces": [
+          510000
+        ],
+        "affectedProvinceNames": [
+          "四川"
+        ],
+        "impact": "政策后月成交 3.2 万套（环比 + 120%）。"
+      },
+      {
+        "id": "policy_chengdu_2024_10",
+        "date": "2024-10",
+        "title": "成都取消限售",
+        "content": "取消限售，取证即可交易。",
+        "affectedProvinces": [
+          510000
+        ],
+        "affectedProvinceNames": [
+          "四川"
+        ],
+        "impact": "二手房 4.5 万套创历史新高，人口增加 15 万。"
+      },
+      {
+        "id": "policy_nanjing_2025_03",
+        "date": "2025-03",
+        "title": "南京房七条",
+        "content": "全面取消限售，设立 1 亿元 \"以旧换新\" 补贴，推行电子房票。",
+        "affectedProvinces": [
+          320000
+        ],
+        "affectedProvinceNames": [
+          "江苏"
+        ],
+        "impact": "政策后月成交 1.8 万套（环比 + 85%），\"以旧换新\" 带动改善型需求占比从 30% 升至 45%。"
+      }
+    ]
+  },
+  {
+    "period": "特色政策案例",
+    "periodRange": "2024-2025",
+    "policies": [
+      {
+        "id": "policy_chongqing_2024_01",
+        "date": "2024-01",
+        "title": "重庆房产税深化改革",
+        "content": "计税依据改为交易价 70%，免税面积从 100㎡提至 180㎡，税率统一 0.5%。",
+        "affectedProvinces": [
+          500000
+        ],
+        "affectedProvinceNames": [
+          "重庆"
+        ],
+        "impact": "高档住房税负降 80-90%，成交量 + 45%，二手房市场活跃。"
+      },
+      {
+        "id": "policy_chongqing_2025_02",
+        "date": "2025-02",
+        "title": "重庆取消中心城区限售",
+        "content": "取消中心城区限售。",
+        "affectedProvinces": [
+          500000
+        ],
+        "affectedProvinceNames": [
+          "重庆"
+        ],
+        "impact": "二手房市场活跃度进一步提升。"
+      },
+      {
+        "id": "policy_changsha_2023_09",
+        "date": "2023-09",
+        "title": "长沙首套房取消限购",
+        "content": "首套房取消限购。",
+        "affectedProvinces": [
+          430000
+        ],
+        "affectedProvinceNames": [
+          "湖南"
+        ],
+        "impact": "人才落户增 50%。"
+      },
+      {
+        "id": "policy_changsha_2025_12",
+        "date": "2025-12",
+        "title": "长沙多孩家庭购房政策",
+        "content": "二孩及以上家庭购房，已有住房套数认定核减一套。",
+        "affectedProvinces": [
+          430000
+        ],
+        "affectedProvinceNames": [
+          "湖南"
+        ],
+        "impact": "多孩家庭购房占比从 7% 升至 15%。"
+      },
+      {
+        "id": "policy_tianjin_2025",
+        "date": "2025",
+        "title": "天津以租换购创新",
+        "content": "租房满 3 年可转购房，抵扣部分首付；共有产权房政府与购房者按 7:3 或 5:5 共有。",
+        "affectedProvinces": [
+          120000
+        ],
+        "affectedProvinceNames": [
+          "天津"
+        ],
+        "impact": "环城四区成交 + 40%，共有产权房申请超 2 万户，刚需压力缓解。"
+      }
+    ]
+  },
+  {
+    "period": "公积金政策调整",
+    "periodRange": "2024-2025",
+    "policies": [
+      {
+        "id": "policy_gjj_2025_05",
+        "date": "2025-05",
+        "title": "全国公积金贷款利率下调",
+        "content": "首套房公积金贷款利率：5 年以下 2.1%，5 年以上 2.6%（均下调 0.25%）。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "公积金贷款申请量增 60%，覆盖更多刚需和改善型需求。"
+      },
+      {
+        "id": "policy_changsha_gjj",
+        "date": "2024-2025",
+        "title": "长沙公积金政策调整",
+        "content": "贷款额度提至 80 万 / 人，三孩家庭 90 万，首付统一 20%。",
+        "affectedProvinces": [
+          430000
+        ],
+        "affectedProvinceNames": [
+          "湖南"
+        ],
+        "impact": "公积金贷款申请量增加，覆盖更多刚需和改善型需求。"
+      },
+      {
+        "id": "policy_xiamen_gjj",
+        "date": "2024-2025",
+        "title": "厦门公积金政策调整",
+        "content": "省内异地购房取消户籍限制，实现全省无障碍提取。",
+        "affectedProvinces": [
+          350000
+        ],
+        "affectedProvinceNames": [
+          "福建"
+        ],
+        "impact": "公积金使用便利性提升。"
+      },
+      {
+        "id": "policy_shenzhen_gjj",
+        "date": "2024-2025",
+        "title": "深圳公积金政策调整",
+        "content": "个人最高贷 60 万，家庭 110 万，多子女家庭上浮 50%。",
+        "affectedProvinces": [
+          440000
+        ],
+        "affectedProvinceNames": [
+          "广东"
+        ],
+        "impact": "多子女家庭购房支持力度加大。"
+      }
+    ]
+  },
+  {
+    "period": "税费与补贴政策",
+    "periodRange": "2024-2025",
+    "policies": [
+      {
+        "id": "policy_tax_2024_11",
+        "date": "2024-11",
+        "title": "全国契税新政",
+        "content": "个人购买家庭唯一和第二套改善性住房（≤140㎡）统一按 1% 税率。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "交易成本降低 30-50%，置换型需求活跃。"
+      },
+      {
+        "id": "policy_vat_2024",
+        "date": "2024",
+        "title": "增值税调整",
+        "content": "住房转让免征年限 \"5 年改 2 年\"。",
+        "affectedProvinces": [
+          "all"
+        ],
+        "affectedProvinceNames": [
+          "全国"
+        ],
+        "impact": "交易成本降低，二手房交易活跃度提升。"
+      },
+      {
+        "id": "policy_subsidy_2024",
+        "date": "2024",
+        "title": "购房补贴政策",
+        "content": "多城按房价 1-2% 补贴，单套最高 3 万元（如南京、重庆、聊城等）。",
+        "affectedProvinces": [
+          320000,
+          500000,
+          370000
+        ],
+        "affectedProvinceNames": [
+          "江苏",
+          "重庆",
+          "山东"
+        ],
+        "impact": "部分城市成交量提升 50% 以上。"
+      },
+      {
+        "id": "policy_old_new_2024",
+        "date": "2024",
+        "title": "以旧换新补贴",
+        "content": "南京（新房 1%+ 房企 3-5% 首付补贴）、重庆（1%）、聊城（1%+ 个税优惠）。",
+        "affectedProvinces": [
+          320000,
+          500000,
+          370000
+        ],
+        "affectedProvinceNames": [
+          "江苏",
+          "重庆",
+          "山东"
+        ],
+        "impact": "置换型需求活跃，部分城市成交量提升 50% 以上。"
+      }
+    ]
+  }
+]
