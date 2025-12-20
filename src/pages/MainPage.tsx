@@ -6,6 +6,7 @@ import { GeoJsonType } from "../map3d/typed";
 import TimeAxis from "../components/TimeAxis";
 import AIChat from "../components/AIChat";
 import CalculatorPanel from "../components/CalculatorPanel";
+import Scatter3D from "../components/Scatter3D";
 import housePriceData from "../data/housePriceData.json";
 
 // 地图放大倍率
@@ -26,6 +27,7 @@ function MainPage() {
     });
   const [currentYear, setCurrentYear] = useState<string>("2020");
   const [currentMonth, setCurrentMonth] = useState<string>("02");
+  const [showScatter3D, setShowScatter3D] = useState<boolean>(false);
 
   const mapAdCode = adcode ? parseInt(adcode) : 100000;
 
@@ -119,6 +121,44 @@ function MainPage() {
               availableMonths={availableMonths}
             />
             <AIChat />
+            <button
+              onClick={() => setShowScatter3D(!showScatter3D)}
+              style={{
+                position: "absolute",
+                top: 450,
+                right: 10,
+                zIndex: showScatter3D ? 1003 : 1001,
+                padding: "10px 20px",
+                background: showScatter3D
+                  ? "linear-gradient(135deg, #3b82f6, #2563eb)"
+                  : "rgba(59, 130, 246, 0.1)",
+                color: "#e2e8f0",
+                border: "1px solid rgba(59, 130, 246, 0.3)",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontSize: 14,
+                fontWeight: 600,
+                transition: "all 0.3s ease",
+                boxShadow: showScatter3D
+                  ? "0 4px 12px rgba(59, 130, 246, 0.4)"
+                  : "0 2px 8px rgba(0, 0, 0, 0.2)",
+              }}
+              onMouseEnter={(e) => {
+                if (!showScatter3D) {
+                  e.currentTarget.style.background = "rgba(59, 130, 246, 0.2)";
+                  e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.5)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!showScatter3D) {
+                  e.currentTarget.style.background = "rgba(59, 130, 246, 0.1)";
+                  e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.3)";
+                }
+              }}
+            >
+              {showScatter3D ? "关闭3D散点图" : "显示3D散点图"}
+            </button>
+            <Scatter3D visible={showScatter3D} />
           </>
         ) : (
           <div

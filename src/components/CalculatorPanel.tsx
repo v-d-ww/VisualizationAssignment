@@ -224,7 +224,7 @@ const CalculatorPanel = () => {
 
   const renderChart = (option: echarts.EChartsOption) => {
     if (!chartInstanceRef.current) return;
-    chartInstanceRef.current.setOption(option, true);
+    chartInstanceRef.current.setOption(option as any, true);
   };
 
   const handleCompute = () => {
