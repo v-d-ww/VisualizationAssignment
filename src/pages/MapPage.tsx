@@ -493,6 +493,41 @@ function MapPage() {
           position: "relative",
         }}
       >
+        {mapAdCode !== 100000 && (
+          <button
+            onClick={() => navigate("/")}
+            style={{
+              position: "absolute",
+              top: 16,
+              left: 16,
+              zIndex: 1000,
+              padding: "10px 16px",
+              background: "rgba(15,23,42,0.9)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 8,
+              color: "#e2e8f0",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              transition: "all 0.2s",
+              backdropFilter: "blur(6px)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(59,130,246,0.2)";
+              e.currentTarget.style.borderColor = "rgba(59,130,246,0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(15,23,42,0.9)";
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+            }}
+          >
+            <span>←</span>
+            <span>返回全国</span>
+          </button>
+        )}
         {geoJson ? (
           <Map3D
             geoJson={geoJson}

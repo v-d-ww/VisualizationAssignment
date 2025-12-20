@@ -4,6 +4,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import Map3D, { ProjectionFnParamType } from "../map3d";
 import { GeoJsonType } from "../map3d/typed";
 import TimeAxis from "../components/TimeAxis";
+import AIChat from "../components/AIChat";
+import CalculatorPanel from "../components/CalculatorPanel";
 import housePriceData from "../data/housePriceData.json";
 
 // 地图放大倍率
@@ -86,9 +88,11 @@ function MainPage() {
         overflow: "hidden",
         background: "#05070f",
         padding: 12,
+        paddingLeft: 360,
         boxSizing: "border-box",
       }}
     >
+      <CalculatorPanel />
       <div
         style={{
           width: "100%",
@@ -114,6 +118,7 @@ function MainPage() {
               availableYears={availableYears}
               availableMonths={availableMonths}
             />
+            <AIChat />
           </>
         ) : (
           <div
