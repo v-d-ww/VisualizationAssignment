@@ -36,6 +36,32 @@ const budgets: Option[] = Array.from({ length: 196 }, (_, i) => ({
   value: 50 + i * 10,
 }));
 
+const downPayments: Option[] = Array.from({ length: 8 }, (_, i) => ({
+  label: `${20 + i * 5}%`,
+  value: 20 + i * 5,
+}));
+
+const loanYears: Option[] = Array.from({ length: 30 }, (_, i) => ({
+  label: `${i + 1}年`,
+  value: i + 1,
+}));
+
+const interestRates: Option[] = [
+  { label: "3.5%", value: 3.5 },
+  { label: "3.7%", value: 3.7 },
+  { label: "4.0%", value: 4.0 },
+  { label: "4.2%", value: 4.2 },
+  { label: "4.5%", value: 4.5 },
+  { label: "4.7%", value: 4.7 },
+  { label: "5.0%", value: 5.0 },
+  { label: "5.2%", value: 5.2 },
+];
+
+const loanAmounts: Option[] = Array.from({ length: 200 }, (_, i) => ({
+  label: `${10 + i * 5}万`,
+  value: (10 + i * 5) * 10000,
+}));
+
 const WheelPicker = ({
   options,
   value,
@@ -178,11 +204,14 @@ const CalculatorPanel = () => {
   const [area, setArea] = useState<number>(90);
   const [holdYears, setHoldYears] = useState<number>(10);
   const [budget, setBudget] = useState<number>(200);
+  const [downPayment, setDownPayment] = useState<number>(30);
+  const [loanYear, setLoanYear] = useState<number>(20);
+  const [interestRate, setInterestRate] = useState<number>(4.5);
+  const [loanAmount, setLoanAmount] = useState<number>(1000000);
+  const [repayType, setRepayType] = useState<"equal" | "principal">("equal");
 
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts>();
-
-  const isComingSoon = activeTab === 4 || activeTab === 5;
 
   useEffect(() => {
     if (chartRef.current) {
@@ -257,13 +286,87 @@ const CalculatorPanel = () => {
         tooltip: { trigger: "item" },
       });
     }
+
+    if (activeTab === 4) {
+      const price = findPrice(data, provinceA, year, month) ?? 0;
+      const totalPrice = price * area;
+      const downPay = totalPrice * (downPayment / 100);
+      const loan = totalPrice - downPay;
+      const monthlyRate = interestRate / 100 / 12;
+      const months = loanYear * 12;
+      
+      let monthlyPay = 0;
+      if (repayType === "equal") {
+        monthlyPay = loan * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+      } else {
+        const principal = loan / months;
+        const firstMonth = principal + loan * monthlyRate;
+        monthlyPay = firstMonth;
+      }
+      
+      const totalInterest = repayType === "equal" 
+        ? monthlyPay * months - loan
+        : (loan * monthlyRate * (months + 1)) / 2;
+      
+      renderChart({
+        series: [
+          {
+            type: "pie",
+            radius: ["35%", "65%"],
+            data: [
+              { value: downPay, name: "首付" },
+              { value: loan, name: "贷款本金" },
+              { value: totalInterest, name: "总利息" },
+            ],
+          },
+        ],
+        tooltip: { trigger: "item", formatter: "{b}: {c} 元<br/>({d}%)" },
+      });
+    }
+
+    if (activeTab === 5) {
+      const monthlyRate = interestRate / 100 / 12;
+      const months = loanYear * 12;
+      
+      let monthlyPay = 0;
+      let totalInterest = 0;
+      
+      if (repayType === "equal") {
+        monthlyPay = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+        totalInterest = monthlyPay * months - loanAmount;
+      } else {
+        const principal = loanAmount / months;
+        const payments: number[] = [];
+        for (let i = 0; i < months; i++) {
+          const remaining = loanAmount - principal * i;
+          payments.push(principal + remaining * monthlyRate);
+        }
+        monthlyPay = payments[0];
+        totalInterest = payments.reduce((a, b) => a + b, 0) - loanAmount;
+      }
+      
+      renderChart({
+        xAxis: { type: "category", data: ["贷款本金", "总利息", "还款总额"] },
+        yAxis: { type: "value" },
+        series: [
+          {
+            type: "bar",
+            data: [
+              { value: loanAmount, itemStyle: { color: "#3b82f6" } },
+              { value: totalInterest, itemStyle: { color: "#f59e0b" } },
+              { value: loanAmount + totalInterest, itemStyle: { color: "#22c55e" } },
+            ],
+          },
+        ],
+        tooltip: { trigger: "axis", formatter: (p: any) => `${p[0].name}: ${(p[0].value / 10000).toFixed(2)} 万` },
+      });
+    }
   };
 
   useEffect(() => {
-    if (isComingSoon) return;
     handleCompute();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, provinceA, provinceB, year, month, area, holdYears, budget]);
+  }, [activeTab, provinceA, provinceB, year, month, area, holdYears, budget, downPayment, loanYear, interestRate, loanAmount, repayType]);
 
   const renderResultSummary = () => {
     const data = housePriceData as ProvinceRecord[];
@@ -289,7 +392,33 @@ const CalculatorPanel = () => {
       const total = purchase + taxes + maintenance;
       return `总成本约 ${(total / 10000).toFixed(1)} 万（房款 ${(purchase / 10000).toFixed(1)} 万，税费 ${(taxes / 10000).toFixed(1)} 万，维护 ${(maintenance / 10000).toFixed(1)} 万）`;
     }
-    return "即将上线，敬请期待";
+    if (activeTab === 4) {
+      const price = findPrice(data, provinceA, year, month) ?? 0;
+      const totalPrice = price * area;
+      const downPay = totalPrice * (downPayment / 100);
+      const loan = totalPrice - downPay;
+      const monthlyRate = interestRate / 100 / 12;
+      const months = loanYear * 12;
+      const monthlyPay = loan * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+      const totalInterest = monthlyPay * months - loan;
+      return `月供约 ${(monthlyPay / 10000).toFixed(2)} 万，首付 ${(downPay / 10000).toFixed(1)} 万，总利息 ${(totalInterest / 10000).toFixed(1)} 万`;
+    }
+    if (activeTab === 5) {
+      const monthlyRate = interestRate / 100 / 12;
+      const months = loanYear * 12;
+      let monthlyPay = 0;
+      let totalInterest = 0;
+      if (repayType === "equal") {
+        monthlyPay = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+        totalInterest = monthlyPay * months - loanAmount;
+      } else {
+        const principal = loanAmount / months;
+        monthlyPay = principal + loanAmount * monthlyRate;
+        totalInterest = (loanAmount * monthlyRate * (months + 1)) / 2;
+      }
+      return `月供约 ${(monthlyPay / 10000).toFixed(2)} 万（${repayType === "equal" ? "等额本息" : "等额本金"}），总利息 ${(totalInterest / 10000).toFixed(1)} 万，还款总额 ${((loanAmount + totalInterest) / 10000).toFixed(1)} 万`;
+    }
+    return "";
   };
 
   const renderParams = () => {
@@ -368,18 +497,136 @@ const CalculatorPanel = () => {
       );
     }
 
-    return (
-      <div
-        style={{
-          color: "#94a3b8",
-          padding: 12,
-          background: "rgba(255,255,255,0.04)",
-          borderRadius: 10,
-        }}
-      >
-        数据补充后开放，敬请期待。
-      </div>
-    );
+    if (activeTab === 4) {
+      return (
+        <>
+          <div style={{ color: "#cbd5e1", fontSize: 13 }}>省份</div>
+          <WheelPicker
+            options={provinces}
+            value={provinceA}
+            onChange={(v) => setProvinceA(v as number)}
+          />
+          <div style={{ marginTop: 12 }}>{commonTime}</div>
+          <div style={{ color: "#cbd5e1", fontSize: 13, marginTop: 10 }}>面积</div>
+          <WheelPicker
+            options={areas}
+            value={area}
+            onChange={(v) => setArea(v as number)}
+          />
+          <div style={{ color: "#cbd5e1", fontSize: 13, marginTop: 10 }}>首付比例</div>
+          <WheelPicker
+            options={downPayments}
+            value={downPayment}
+            onChange={(v) => setDownPayment(v as number)}
+          />
+          <div style={{ color: "#cbd5e1", fontSize: 13, marginTop: 10 }}>贷款年限</div>
+          <WheelPicker
+            options={loanYears}
+            value={loanYear}
+            onChange={(v) => setLoanYear(v as number)}
+          />
+          <div style={{ color: "#cbd5e1", fontSize: 13, marginTop: 10 }}>利率</div>
+          <WheelPicker
+            options={interestRates}
+            value={interestRate}
+            onChange={(v) => setInterestRate(v as number)}
+          />
+          <div style={{ color: "#cbd5e1", fontSize: 13, marginTop: 10 }}>还款方式</div>
+          <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+            <button
+              onClick={() => setRepayType("equal")}
+              style={{
+                flex: 1,
+                padding: "8px",
+                borderRadius: 8,
+                border: "none",
+                background: repayType === "equal" ? "#3b82f6" : "rgba(255,255,255,0.06)",
+                color: repayType === "equal" ? "#fff" : "#94a3b8",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              等额本息
+            </button>
+            <button
+              onClick={() => setRepayType("principal")}
+              style={{
+                flex: 1,
+                padding: "8px",
+                borderRadius: 8,
+                border: "none",
+                background: repayType === "principal" ? "#3b82f6" : "rgba(255,255,255,0.06)",
+                color: repayType === "principal" ? "#fff" : "#94a3b8",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              等额本金
+            </button>
+          </div>
+        </>
+      );
+    }
+
+    if (activeTab === 5) {
+      return (
+        <>
+          <div style={{ color: "#cbd5e1", fontSize: 13 }}>贷款金额</div>
+          <WheelPicker
+            options={loanAmounts}
+            value={loanAmount}
+            onChange={(v) => setLoanAmount(v as number)}
+          />
+          <div style={{ color: "#cbd5e1", fontSize: 13, marginTop: 10 }}>贷款年限</div>
+          <WheelPicker
+            options={loanYears}
+            value={loanYear}
+            onChange={(v) => setLoanYear(v as number)}
+          />
+          <div style={{ color: "#cbd5e1", fontSize: 13, marginTop: 10 }}>利率</div>
+          <WheelPicker
+            options={interestRates}
+            value={interestRate}
+            onChange={(v) => setInterestRate(v as number)}
+          />
+          <div style={{ color: "#cbd5e1", fontSize: 13, marginTop: 10 }}>还款方式</div>
+          <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+            <button
+              onClick={() => setRepayType("equal")}
+              style={{
+                flex: 1,
+                padding: "8px",
+                borderRadius: 8,
+                border: "none",
+                background: repayType === "equal" ? "#3b82f6" : "rgba(255,255,255,0.06)",
+                color: repayType === "equal" ? "#fff" : "#94a3b8",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              等额本息
+            </button>
+            <button
+              onClick={() => setRepayType("principal")}
+              style={{
+                flex: 1,
+                padding: "8px",
+                borderRadius: 8,
+                border: "none",
+                background: repayType === "principal" ? "#3b82f6" : "rgba(255,255,255,0.06)",
+                color: repayType === "principal" ? "#fff" : "#94a3b8",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              等额本金
+            </button>
+          </div>
+        </>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -407,8 +654,8 @@ const CalculatorPanel = () => {
         <TabButton active={activeTab === 1} label="趋势" onClick={() => setActiveTab(1)} />
         <TabButton active={activeTab === 2} label="对比" onClick={() => setActiveTab(2)} />
         <TabButton active={activeTab === 3} label="成本" onClick={() => setActiveTab(3)} />
-        <TabButton active={activeTab === 4} label="场景" onClick={() => setActiveTab(4)} disabled />
-        <TabButton active={activeTab === 5} label="因子" onClick={() => setActiveTab(5)} disabled />
+        <TabButton active={activeTab === 4} label="房贷" onClick={() => setActiveTab(4)} />
+        <TabButton active={activeTab === 5} label="贷款" onClick={() => setActiveTab(5)} />
       </div>
 
       <div
@@ -451,22 +698,20 @@ const CalculatorPanel = () => {
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ color: "#e2e8f0", fontWeight: 700 }}>计算结果</div>
-            {!isComingSoon && (
-              <button
-                onClick={handleCompute}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  border: "none",
-                  background: "#3b82f6",
-                  color: "#fff",
-                  cursor: "pointer",
-                  transition: "opacity 0.2s",
-                }}
-              >
-                计算
-              </button>
-            )}
+            <button
+              onClick={handleCompute}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "none",
+                background: "#3b82f6",
+                color: "#fff",
+                cursor: "pointer",
+                transition: "opacity 0.2s",
+              }}
+            >
+              计算
+            </button>
           </div>
           <div style={{ color: "#cbd5e1", fontSize: 13 }}>{renderResultSummary()}</div>
           <div
