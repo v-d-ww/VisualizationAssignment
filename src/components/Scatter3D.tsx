@@ -6,6 +6,7 @@ import housePriceData from "../data/housePriceData.json";
 
 interface Scatter3DProps {
   visible: boolean;
+  onClose?: () => void;
 }
 
 type ProvinceData = {
@@ -15,7 +16,7 @@ type ProvinceData = {
   gdp?: Record<string, number>;
 };
 
-function Scatter3D({ visible }: Scatter3DProps) {
+function Scatter3D({ visible, onClose }: Scatter3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const labelContainerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -49,8 +50,8 @@ function Scatter3D({ visible }: Scatter3DProps) {
 
     // 创建相机
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000);
-    camera.position.set(120, 120, 120);
-    camera.lookAt(50, 50, 50);
+    camera.position.set(150, 150, 150);
+    camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
     // 创建渲染器
@@ -125,10 +126,10 @@ function Scatter3D({ visible }: Scatter3DProps) {
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
 
-    // 归一化函数（映射到 0 到 100 的范围）
-    const normalizeYear = (year: number) => ((year - minYear) / (maxYear - minYear)) * 100;
-    const normalizeGdp = (gdp: number) => ((gdp - minGdp) / (maxGdp - minGdp)) * 100;
-    const normalizePrice = (price: number) => ((price - minPrice) / (maxPrice - minPrice)) * 100;
+    // 归一化函数（映射到 -50 到 50 的范围）
+    const normalizeYear = (year: number) => ((year - minYear) / (maxYear - minYear)) * 100 - 50;
+    const normalizeGdp = (gdp: number) => ((gdp - minGdp) / (maxGdp - minGdp)) * 100 - 50;
+    const normalizePrice = (price: number) => ((price - minPrice) / (maxPrice - minPrice)) * 100 - 50;
 
     // 创建点几何体
     const geometry = new THREE.BufferGeometry();
@@ -170,7 +171,7 @@ function Scatter3D({ visible }: Scatter3DProps) {
     pointsRef.current = points;
 
     // 创建坐标轴
-    const axesHelper = new THREE.AxesHelper(110);
+    const axesHelper = new THREE.AxesHelper(60);
     scene.add(axesHelper);
 
     // 创建坐标轴标签（使用CSS2DObject）
@@ -188,48 +189,13 @@ function Scatter3D({ visible }: Scatter3DProps) {
       return labelObject;
     };
 
-    // 创建坐标轴刻度标签
-    const createTickLabel = (position: THREE.Vector3, text: string, color: string) => {
-      const div = document.createElement("div");
-      div.className = "tick-label";
-      div.textContent = text;
-      div.style.color = color;
-      div.style.fontSize = "12px";
-      div.style.pointerEvents = "none";
-      div.style.userSelect = "none";
-      const labelObject = new CSS2DObject(div);
-      labelObject.position.copy(position);
-      return labelObject;
-    };
-
     // 添加坐标轴标签
-    scene.add(createAxisLabel(new THREE.Vector3(110, 0, 0), "年份", "#ff4444"));
-    scene.add(createAxisLabel(new THREE.Vector3(0, 110, 0), "GDP(亿元)", "#44ff44"));
-    scene.add(createAxisLabel(new THREE.Vector3(0, 0, 110), "房价(元/㎡)", "#4444ff"));
+    scene.add(createAxisLabel(new THREE.Vector3(55, 0, 0), "年份", "#ff4444"));
+    scene.add(createAxisLabel(new THREE.Vector3(0, 55, 0), "GDP(亿元)", "#44ff44"));
+    scene.add(createAxisLabel(new THREE.Vector3(0, 0, 55), "房价(元/㎡)", "#4444ff"));
 
-    // 添加坐标轴刻度标签
-    // X轴（年份）刻度
-    for (let i = 0; i <= 4; i++) {
-      const tickValue = minYear + (maxYear - minYear) * (i / 4);
-      const tickPosition = (i / 4) * 100;
-      scene.add(createTickLabel(new THREE.Vector3(tickPosition, -8, 0), tickValue.toString(), "#ff6666"));
-    }
-    // Y轴（GDP）刻度
-    for (let i = 0; i <= 4; i++) {
-      const tickValue = minGdp + (maxGdp - minGdp) * (i / 4);
-      const tickPosition = (i / 4) * 100;
-      scene.add(createTickLabel(new THREE.Vector3(-8, tickPosition, 0), Math.round(tickValue).toLocaleString(), "#66ff66"));
-    }
-    // Z轴（房价）刻度
-    for (let i = 0; i <= 4; i++) {
-      const tickValue = minPrice + (maxPrice - minPrice) * (i / 4);
-      const tickPosition = (i / 4) * 100;
-      scene.add(createTickLabel(new THREE.Vector3(0, -8, tickPosition), Math.round(tickValue).toLocaleString(), "#6666ff"));
-    }
-
-    // 添加网格辅助线（调整到0-100范围）
+    // 添加网格辅助线
     const gridHelper = new THREE.GridHelper(100, 10, 0x444444, 0x222222);
-    gridHelper.position.set(0, 0, 0);
     scene.add(gridHelper);
 
     // 添加光源
@@ -338,6 +304,44 @@ function Scatter3D({ visible }: Scatter3DProps) {
           background: "#05070f",
         }}
       />
+      {onClose && (
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: 20,
+            right: 20,
+            zIndex: 1003,
+            width: 36,
+            height: 36,
+            background: "rgba(15, 23, 42, 0.9)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            borderRadius: "50%",
+            color: "#e2e8f0",
+            fontSize: 20,
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s ease",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(239, 68, 68, 0.9)";
+            e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.5)";
+            e.currentTarget.style.transform = "scale(1.1)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(15, 23, 42, 0.9)";
+            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.2)";
+            e.currentTarget.style.transform = "scale(1)";
+          }}
+          title="关闭3D散点图"
+        >
+          ×
+        </button>
+      )}
       <div
         ref={labelContainerRef}
         style={{

@@ -127,7 +127,7 @@ function MainPage() {
                 position: "absolute",
                 top: 450,
                 right: 10,
-                zIndex: showScatter3D ? 1003 : 1001,
+                zIndex: 998,
                 padding: "10px 20px",
                 background: showScatter3D
                   ? "linear-gradient(135deg, #3b82f6, #2563eb)"
@@ -158,7 +158,7 @@ function MainPage() {
             >
               {showScatter3D ? "关闭3D散点图" : "显示3D散点图"}
             </button>
-            <Scatter3D visible={showScatter3D} />
+            <Scatter3D visible={showScatter3D} onClose={() => setShowScatter3D(false)} />
           </>
         ) : (
           <div
