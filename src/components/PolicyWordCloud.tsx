@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import policyData from "../data/policyData.json";
 
 interface PolicyWordCloudProps {
@@ -171,6 +171,19 @@ function PolicyWordCloud({ visible, onClose }: PolicyWordCloudProps) {
     x: number;
     y: number;
   } | null>(null);
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearHideTimer = () => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  };
+
+  const scheduleHide = () => {
+    clearHideTimer();
+    hideTimerRef.current = setTimeout(() => setHovered(null), 120);
+  };
 
   const keywordList = useMemo<KeywordInfo[]>(() => {
     const policies = extractPolicies();
@@ -362,6 +375,7 @@ function PolicyWordCloud({ visible, onClose }: PolicyWordCloudProps) {
                   border: "none",
                 }}
                 onMouseEnter={(e) => {
+                  clearHideTimer();
                   const rect = (e.target as HTMLElement).getBoundingClientRect();
                   setHovered({
                     keyword: item.word,
@@ -369,8 +383,9 @@ function PolicyWordCloud({ visible, onClose }: PolicyWordCloudProps) {
                     y: rect.top,
                   });
                 }}
-                onMouseLeave={() => setHovered(null)}
+                onMouseLeave={scheduleHide}
                 onFocus={(e) => {
+                  clearHideTimer();
                   const rect = (e.target as HTMLElement).getBoundingClientRect();
                   setHovered({
                     keyword: item.word,
@@ -378,7 +393,7 @@ function PolicyWordCloud({ visible, onClose }: PolicyWordCloudProps) {
                     y: rect.top,
                   });
                 }}
-                onBlur={() => setHovered(null)}
+                onBlur={scheduleHide}
                 onMouseOver={(e) => {
                   const el = e.currentTarget as HTMLElement;
                   el.style.background = "rgba(255,255,255,0.08)";
@@ -412,9 +427,10 @@ function PolicyWordCloud({ visible, onClose }: PolicyWordCloudProps) {
               overflow: "auto",
               zIndex: 10000,
               boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+              pointerEvents: "auto",
             }}
-            onMouseEnter={() => setHovered((prev) => prev)}
-            onMouseLeave={() => setHovered(null)}
+            onMouseEnter={() => clearHideTimer()}
+            onMouseLeave={scheduleHide}
           >
             <div
               style={{
