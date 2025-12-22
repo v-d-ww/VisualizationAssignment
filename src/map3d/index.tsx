@@ -34,12 +34,13 @@ interface Props {
   housePriceData?: any[];
   currentYear?: string;
   currentMonth?: string;
+  showHeatmap?: boolean;
 }
 
 let lastPick: any = null;
 
 function Map3D(props: Props) {
-  const { geoJson, dblClickFn, projectionFnParam, housePriceData, currentYear, currentMonth } = props;
+  const { geoJson, dblClickFn, projectionFnParam, housePriceData, currentYear, currentMonth, showHeatmap = false } = props;
   const mapRef = useRef<any>();
   const map2dRef = useRef<any>();
   const toolTipRef = useRef<any>();
@@ -56,6 +57,33 @@ function Map3D(props: Props) {
     return province.data[year][month] || null;
   }, [housePriceData]);
 
+  // 获取年份平均房价
+  const getYearAveragePrice = useCallback((adcode: number, year: string) => {
+    if (!housePriceData) return null;
+    const province = housePriceData.find((item: any) => item.adcode === adcode);
+    if (!province || !province.data || !province.data[year]) return null;
+    return province.data[year].average || null;
+  }, [housePriceData]);
+
+  // 热力图颜色映射：从冷色（蓝）到热色（红）
+  const getHeatmapColor = useCallback((price: number | null, maxPrice: number, minPrice: number) => {
+    if (price === null) return "#06092A";
+    const ratio = (price - minPrice) / (maxPrice - minPrice);
+    
+    // 使用 HSL 颜色空间，从蓝色(240度)渐变到红色(0度)
+    // H: 240 -> 0 (蓝 -> 青 -> 绿 -> 黄 -> 红)
+    // S: 0.8 -> 1.0 (饱和度逐渐增加)
+    // L: 0.35 -> 0.55 (亮度逐渐增加)
+    const hue = 240 * (1 - ratio); // 从240度(蓝)到0度(红)
+    const saturation = 0.8 + ratio * 0.2; // 0.8到1.0
+    const lightness = 0.35 + ratio * 0.2; // 0.35到0.55
+    
+    const color = new THREE.Color();
+    color.setHSL(hue / 360, saturation, lightness);
+    return `#${color.getHexString()}`;
+  }, []);
+
+  // 普通颜色映射（原有逻辑）
   const getPriceColor = useCallback((price: number | null, maxPrice: number, minPrice: number) => {
     if (price === null) return "#06092A";
     const ratio = (price - minPrice) / (maxPrice - minPrice);
@@ -66,14 +94,24 @@ function Map3D(props: Props) {
   }, []);
 
   const updateMapColors = useCallback(() => {
-    if (!mapObject3DRef.current || !currentYear || !currentMonth || !housePriceData) return;
+    if (!mapObject3DRef.current || !currentYear || !housePriceData) return;
+    if (!showHeatmap && !currentMonth) return;
 
     const prices: number[] = [];
+    
+    // 收集所有省份的价格数据
     mapObject3DRef.current.traverse((obj: any) => {
       if (obj.userData.isChangeColor && obj.parent && obj.parent.customProperties) {
         const adcode = obj.parent.customProperties.adcode;
         if (adcode) {
-          const price = getPriceByTime(adcode, currentYear, currentMonth);
+          let price: number | null = null;
+          if (showHeatmap) {
+            // 热力图模式：使用年份平均值
+            price = getYearAveragePrice(adcode, currentYear);
+          } else {
+            // 普通模式：使用当前月份数据
+            price = getPriceByTime(adcode, currentYear, currentMonth || "");
+          }
           if (price !== null) {
             prices.push(price);
           }
@@ -86,16 +124,25 @@ function Map3D(props: Props) {
     const maxPrice = Math.max(...prices);
     const minPrice = Math.min(...prices);
 
+    // 更新地图颜色
     mapObject3DRef.current.traverse((obj: any) => {
       if (obj.material && obj.material[0] && obj.userData.isChangeColor && obj.parent && obj.parent.customProperties) {
         const adcode = obj.parent.customProperties.adcode;
-        const price = getPriceByTime(adcode, currentYear, currentMonth);
-        const color = getPriceColor(price, maxPrice, minPrice);
+        let price: number | null = null;
+        if (showHeatmap) {
+          price = getYearAveragePrice(adcode, currentYear);
+        } else {
+          price = getPriceByTime(adcode, currentYear, currentMonth || "");
+        }
+        
+        const color = showHeatmap 
+          ? getHeatmapColor(price, maxPrice, minPrice)
+          : getPriceColor(price, maxPrice, minPrice);
         obj.material[0].color.set(color);
         obj.userData.priceColor = color;
       }
     });
-  }, [currentYear, currentMonth, housePriceData, getPriceByTime, getPriceColor]);
+  }, [currentYear, currentMonth, housePriceData, showHeatmap, getPriceByTime, getYearAveragePrice, getPriceColor, getHeatmapColor]);
 
   useEffect(() => {
     updateMapColors();
@@ -337,8 +384,15 @@ function Map3D(props: Props) {
           toolTipRef.current.style.visibility = "visible";
         }
 
-        const price = getPriceByTime(properties.adcode, currentYear || "", currentMonth || "");
-        const priceText = price !== null ? `房价: ${price.toFixed(2)} 元/㎡` : "房价: 暂无数据";
+        let price: number | null = null;
+        let priceText = "房价: 暂无数据";
+        if (showHeatmap) {
+          price = getYearAveragePrice(properties.adcode, currentYear || "");
+          priceText = price !== null ? `房价: ${price.toFixed(2)} 元/㎡ (${currentYear}年平均)` : "房价: 暂无数据";
+        } else {
+          price = getPriceByTime(properties.adcode, currentYear || "", currentMonth || "");
+          priceText = price !== null ? `房价: ${price.toFixed(2)} 元/㎡` : "房价: 暂无数据";
+        }
         setToolTipData({
           text: `${properties.name}\n${priceText}`,
         });
@@ -537,7 +591,7 @@ function Map3D(props: Props) {
         light.intensity = v;
       });
 
-    if (mapObject3DRef.current && currentYear && currentMonth && housePriceData) {
+    if (mapObject3DRef.current && currentYear && housePriceData) {
       setTimeout(() => {
         updateMapColors();
       }, 100);
@@ -549,7 +603,7 @@ function Map3D(props: Props) {
       window.removeEventListener("dblclick", onDblclickEvent);
       gui.destroy();
     };
-  }, [geoJson, currentYear, currentMonth, housePriceData, updateMapColors]);
+  }, [geoJson, currentYear, currentMonth, housePriceData, showHeatmap, updateMapColors]);
 
   return (
     <div
