@@ -37,7 +37,8 @@ function kMeansClustering(
     centroids.push([...points[index]]);
   }
 
-  let clusters: number[] = [];
+  // 初始化为与 points 同长度的数组，避免后续 length 不一致
+  let clusters: number[] = new Array(points.length).fill(-1);
   let iterations = 0;
 
   while (iterations < maxIterations) {
@@ -58,16 +59,24 @@ function kMeansClustering(
       newClusters.push(closestCluster);
     }
 
-    // 检查是否收敛
-    let converged = true;
-    for (let i = 0; i < clusters.length; i++) {
-      if (clusters[i] !== newClusters[i]) {
-        converged = false;
+    // 检查是否收敛（从第二次迭代开始判断）
+    const isSameLength = clusters.length === newClusters.length;
+    const hasPrevAssignment = clusters[0] !== -1;
+    if (hasPrevAssignment && isSameLength) {
+      let converged = true;
+      for (let i = 0; i < clusters.length; i++) {
+        if (clusters[i] !== newClusters[i]) {
+          converged = false;
+          break;
+        }
+      }
+      if (converged) {
+        clusters = newClusters;
         break;
       }
     }
-    if (converged) break;
 
+    // 更新当前聚类结果
     clusters = newClusters;
 
     // 更新聚类中心
@@ -241,12 +250,18 @@ function PriceClusterChart({ visible, onClose }: PriceClusterChartProps) {
         name: `增长模式 ${id + 1}`,
         type: "scatter",
         data: clusterGroups[id],
+        symbolSize: (data: any) => {
+          // 根据平均价格调整点的大小，容错处理异常数据
+          const valArray = Array.isArray(data?.value)
+            ? data.value
+            : Array.isArray(data)
+            ? data
+            : undefined;
+          const price = typeof valArray?.[1] === "number" ? valArray[1] : 0;
+          return Math.max(8, Math.min(20, price / 500));
+        },
         itemStyle: {
           color: clusterColors[id % clusterColors.length],
-        },
-        symbolSize: (data: any) => {
-          // 根据平均价格调整点的大小
-          return Math.max(8, Math.min(20, data.value[1] / 500));
         },
       });
     });

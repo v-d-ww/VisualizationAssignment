@@ -1,0 +1,6 @@
+umap-learn
+hdbscan
+scikit-learn
+numpy
+pandas
+jieba
