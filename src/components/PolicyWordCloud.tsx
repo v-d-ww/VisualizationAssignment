@@ -455,7 +455,7 @@ function PolicyWordCloud({ visible, onClose }: PolicyWordCloudProps) {
                 .map((p) => (
                   <a
                     key={p.id}
-                    href={`https://baike.baidu.com/item/${encodeURIComponent(
+                    href={`https://www.baidu.com/s?wd=${encodeURIComponent(
                       p.title
                     )}`}
                     target="_blank"
