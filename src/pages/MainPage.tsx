@@ -10,6 +10,12 @@ import Scatter3D from "../components/Scatter3D";
 import PolicyFlowChart from "../components/PolicyFlowChart";
 import PolicyWordCloud from "../components/PolicyWordCloud";
 import PriceClusterChart from "../components/PriceClusterChart";
+import RadarChart from "../components/RadarChart";
+import RingChart from "../components/RingChart";
+import PricePredictionEngine from "../components/PricePredictionEngine";
+import InvestmentAdvisor from "../components/InvestmentAdvisor";
+import AnomalyDetector from "../components/AnomalyDetector";
+import DataInsights from "../components/DataInsights";
 import housePriceData from "../data/housePriceData.json";
 
 // 地图放大倍率
@@ -35,6 +41,12 @@ function MainPage() {
   const [showHeatmap, setShowHeatmap] = useState<boolean>(false);
   const [showCluster, setShowCluster] = useState<boolean>(false);
   const [showWordCloud, setShowWordCloud] = useState<boolean>(false);
+  const [showRadar, setShowRadar] = useState<boolean>(false);
+  const [showRing, setShowRing] = useState<boolean>(false);
+  const [showPrediction, setShowPrediction] = useState<boolean>(false);
+  const [showInvestment, setShowInvestment] = useState<boolean>(false);
+  const [showAnomaly, setShowAnomaly] = useState<boolean>(false);
+  const [showInsights, setShowInsights] = useState<boolean>(false);
 
   const mapAdCode = adcode ? parseInt(adcode) : 100000;
 
@@ -338,6 +350,210 @@ function MainPage() {
               >
                 {showWordCloud ? "关闭政策词云" : "显示政策词云"}
               </button>
+              <button
+                onClick={() => setShowRadar(!showRadar)}
+                style={{
+                  padding: "10px 16px",
+                  background: showRadar
+                    ? "linear-gradient(135deg, #06b6d4, #0891b2)"
+                    : "rgba(6, 182, 212, 0.1)",
+                  color: "#e2e8f0",
+                  border: "1px solid rgba(6, 182, 212, 0.3)",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  transition: "all 0.3s ease",
+                  boxShadow: showRadar
+                    ? "0 4px 12px rgba(6, 182, 212, 0.4)"
+                    : "0 2px 8px rgba(0, 0, 0, 0.2)",
+                  minWidth: 110,
+                }}
+                onMouseEnter={(e) => {
+                  if (!showRadar) {
+                    e.currentTarget.style.background = "rgba(6, 182, 212, 0.2)";
+                    e.currentTarget.style.borderColor = "rgba(6, 182, 212, 0.5)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!showRadar) {
+                    e.currentTarget.style.background = "rgba(6, 182, 212, 0.1)";
+                    e.currentTarget.style.borderColor = "rgba(6, 182, 212, 0.3)";
+                  }
+                }}
+              >
+                {showRadar ? "关闭雷达图" : "显示雷达图"}
+              </button>
+              <button
+                onClick={() => setShowRing(!showRing)}
+                style={{
+                  padding: "10px 16px",
+                  background: showRing
+                    ? "linear-gradient(135deg, #ec4899, #db2777)"
+                    : "rgba(236, 72, 153, 0.1)",
+                  color: "#e2e8f0",
+                  border: "1px solid rgba(236, 72, 153, 0.3)",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  transition: "all 0.3s ease",
+                  boxShadow: showRing
+                    ? "0 4px 12px rgba(236, 72, 153, 0.4)"
+                    : "0 2px 8px rgba(0, 0, 0, 0.2)",
+                  minWidth: 110,
+                }}
+                onMouseEnter={(e) => {
+                  if (!showRing) {
+                    e.currentTarget.style.background = "rgba(236, 72, 153, 0.2)";
+                    e.currentTarget.style.borderColor = "rgba(236, 72, 153, 0.5)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!showRing) {
+                    e.currentTarget.style.background = "rgba(236, 72, 153, 0.1)";
+                    e.currentTarget.style.borderColor = "rgba(236, 72, 153, 0.3)";
+                  }
+                }}
+              >
+                {showRing ? "关闭环图" : "显示环图"}
+              </button>
+              <button
+                onClick={() => setShowPrediction(!showPrediction)}
+                style={{
+                  padding: "10px 16px",
+                  background: showPrediction
+                    ? "linear-gradient(135deg, #14b8a6, #0d9488)"
+                    : "rgba(20, 184, 166, 0.1)",
+                  color: "#e2e8f0",
+                  border: "1px solid rgba(20, 184, 166, 0.3)",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  transition: "all 0.3s ease",
+                  boxShadow: showPrediction
+                    ? "0 4px 12px rgba(20, 184, 166, 0.4)"
+                    : "0 2px 8px rgba(0, 0, 0, 0.2)",
+                  minWidth: 110,
+                }}
+                onMouseEnter={(e) => {
+                  if (!showPrediction) {
+                    e.currentTarget.style.background = "rgba(20, 184, 166, 0.2)";
+                    e.currentTarget.style.borderColor = "rgba(20, 184, 166, 0.5)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!showPrediction) {
+                    e.currentTarget.style.background = "rgba(20, 184, 166, 0.1)";
+                    e.currentTarget.style.borderColor = "rgba(20, 184, 166, 0.3)";
+                  }
+                }}
+              >
+                {showPrediction ? "关闭AI预测" : "AI预测引擎"}
+              </button>
+              <button
+                onClick={() => setShowInvestment(!showInvestment)}
+                style={{
+                  padding: "10px 16px",
+                  background: showInvestment
+                    ? "linear-gradient(135deg, #f97316, #ea580c)"
+                    : "rgba(249, 115, 22, 0.1)",
+                  color: "#e2e8f0",
+                  border: "1px solid rgba(249, 115, 22, 0.3)",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  transition: "all 0.3s ease",
+                  boxShadow: showInvestment
+                    ? "0 4px 12px rgba(249, 115, 22, 0.4)"
+                    : "0 2px 8px rgba(0, 0, 0, 0.2)",
+                  minWidth: 110,
+                }}
+                onMouseEnter={(e) => {
+                  if (!showInvestment) {
+                    e.currentTarget.style.background = "rgba(249, 115, 22, 0.2)";
+                    e.currentTarget.style.borderColor = "rgba(249, 115, 22, 0.5)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!showInvestment) {
+                    e.currentTarget.style.background = "rgba(249, 115, 22, 0.1)";
+                    e.currentTarget.style.borderColor = "rgba(249, 115, 22, 0.3)";
+                  }
+                }}
+              >
+                {showInvestment ? "关闭投资助手" : "投资决策助手"}
+              </button>
+              <button
+                onClick={() => setShowAnomaly(!showAnomaly)}
+                style={{
+                  padding: "10px 16px",
+                  background: showAnomaly
+                    ? "linear-gradient(135deg, #dc2626, #b91c1c)"
+                    : "rgba(220, 38, 38, 0.1)",
+                  color: "#e2e8f0",
+                  border: "1px solid rgba(220, 38, 38, 0.3)",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  transition: "all 0.3s ease",
+                  boxShadow: showAnomaly
+                    ? "0 4px 12px rgba(220, 38, 38, 0.4)"
+                    : "0 2px 8px rgba(0, 0, 0, 0.2)",
+                  minWidth: 110,
+                }}
+                onMouseEnter={(e) => {
+                  if (!showAnomaly) {
+                    e.currentTarget.style.background = "rgba(220, 38, 38, 0.2)";
+                    e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.5)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!showAnomaly) {
+                    e.currentTarget.style.background = "rgba(220, 38, 38, 0.1)";
+                    e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.3)";
+                  }
+                }}
+              >
+                {showAnomaly ? "关闭异常检测" : "异常检测系统"}
+              </button>
+              <button
+                onClick={() => setShowInsights(!showInsights)}
+                style={{
+                  padding: "10px 16px",
+                  background: showInsights
+                    ? "linear-gradient(135deg, #8b5cf6, #7c3aed)"
+                    : "rgba(139, 92, 246, 0.1)",
+                  color: "#e2e8f0",
+                  border: "1px solid rgba(139, 92, 246, 0.3)",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  transition: "all 0.3s ease",
+                  boxShadow: showInsights
+                    ? "0 4px 12px rgba(139, 92, 246, 0.4)"
+                    : "0 2px 8px rgba(0, 0, 0, 0.2)",
+                  minWidth: 110,
+                }}
+                onMouseEnter={(e) => {
+                  if (!showInsights) {
+                    e.currentTarget.style.background = "rgba(139, 92, 246, 0.2)";
+                    e.currentTarget.style.borderColor = "rgba(139, 92, 246, 0.5)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!showInsights) {
+                    e.currentTarget.style.background = "rgba(139, 92, 246, 0.1)";
+                    e.currentTarget.style.borderColor = "rgba(139, 92, 246, 0.3)";
+                  }
+                }}
+              >
+                {showInsights ? "关闭数据洞察" : "智能数据洞察"}
+              </button>
             </div>
             {/* 热力图图例 */}
             {showHeatmap && (
@@ -412,6 +628,12 @@ function MainPage() {
             <PolicyFlowChart visible={showPolicyFlow} onClose={() => setShowPolicyFlow(false)} />
             <PriceClusterChart visible={showCluster} onClose={() => setShowCluster(false)} />
             <PolicyWordCloud visible={showWordCloud} onClose={() => setShowWordCloud(false)} />
+            <RadarChart visible={showRadar} onClose={() => setShowRadar(false)} />
+            <RingChart visible={showRing} onClose={() => setShowRing(false)} />
+            <PricePredictionEngine visible={showPrediction} onClose={() => setShowPrediction(false)} />
+            <InvestmentAdvisor visible={showInvestment} onClose={() => setShowInvestment(false)} />
+            <AnomalyDetector visible={showAnomaly} onClose={() => setShowAnomaly(false)} />
+            <DataInsights visible={showInsights} onClose={() => setShowInsights(false)} />
           </>
         ) : (
           <div
