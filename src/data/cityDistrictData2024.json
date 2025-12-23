@@ -32,6 +32,11 @@
           "housePrice": 36000
         },
         {
+          "name": "石景山区",
+          "adcode": 110107,
+          "housePrice": 38000
+        },
+        {
           "name": "通州区",
           "adcode": 110112,
           "housePrice": 32000
@@ -45,6 +50,41 @@
           "name": "昌平区",
           "adcode": 110114,
           "housePrice": 33000
+        },
+        {
+          "name": "门头沟区",
+          "adcode": 110109,
+          "housePrice": 32000
+        },
+        {
+          "name": "房山区",
+          "adcode": 110111,
+          "housePrice": 30000
+        },
+        {
+          "name": "顺义区",
+          "adcode": 110113,
+          "housePrice": 32000
+        },
+        {
+          "name": "怀柔区",
+          "adcode": 110116,
+          "housePrice": 28000
+        },
+        {
+          "name": "平谷区",
+          "adcode": 110117,
+          "housePrice": 27000
+        },
+        {
+          "name": "密云区",
+          "adcode": 110118,
+          "housePrice": 26000
+        },
+        {
+          "name": "延庆区",
+          "adcode": 110119,
+          "housePrice": 25000
         }
       ]
     },
@@ -84,6 +124,11 @@
           "housePrice": 18500
         },
         {
+          "name": "东丽区",
+          "adcode": 120110,
+          "housePrice": 18000
+        },
+        {
           "name": "滨海新区",
           "adcode": 120116,
           "housePrice": 17500
@@ -92,6 +137,41 @@
           "name": "西青区",
           "adcode": 120111,
           "housePrice": 17000
+        },
+        {
+          "name": "津南区",
+          "adcode": 120112,
+          "housePrice": 17500
+        },
+        {
+          "name": "北辰区",
+          "adcode": 120113,
+          "housePrice": 17000
+        },
+        {
+          "name": "武清区",
+          "adcode": 120114,
+          "housePrice": 16500
+        },
+        {
+          "name": "宝坻区",
+          "adcode": 120115,
+          "housePrice": 16000
+        },
+        {
+          "name": "宁河区",
+          "adcode": 120117,
+          "housePrice": 15500
+        },
+        {
+          "name": "静海区",
+          "adcode": 120118,
+          "housePrice": 15500
+        },
+        {
+          "name": "蓟州区",
+          "adcode": 120119,
+          "housePrice": 15000
         }
       ]
     },
@@ -121,6 +201,11 @@
           "housePrice": 62000
         },
         {
+          "name": "普陀区",
+          "adcode": 310107,
+          "housePrice": 56000
+        },
+        {
           "name": "浦东新区",
           "adcode": 310115,
           "housePrice": 55000
@@ -139,6 +224,41 @@
           "name": "闵行区",
           "adcode": 310112,
           "housePrice": 42000
+        },
+        {
+          "name": "宝山区",
+          "adcode": 310113,
+          "housePrice": 42000
+        },
+        {
+          "name": "嘉定区",
+          "adcode": 310114,
+          "housePrice": 40000
+        },
+        {
+          "name": "金山区",
+          "adcode": 310116,
+          "housePrice": 35000
+        },
+        {
+          "name": "松江区",
+          "adcode": 310117,
+          "housePrice": 38000
+        },
+        {
+          "name": "青浦区",
+          "adcode": 310118,
+          "housePrice": 36000
+        },
+        {
+          "name": "奉贤区",
+          "adcode": 310120,
+          "housePrice": 35000
+        },
+        {
+          "name": "崇明区",
+          "adcode": 310151,
+          "housePrice": 28000
         }
       ]
     },
@@ -181,6 +301,161 @@
           "name": "巴南区",
           "adcode": 500113,
           "housePrice": 17500
+        },
+        {
+          "name": "大渡口区",
+          "adcode": 500104,
+          "housePrice": 18000
+        },
+        {
+          "name": "北碚区",
+          "adcode": 500109,
+          "housePrice": 18000
+        },
+        {
+          "name": "綦江区",
+          "adcode": 500110,
+          "housePrice": 16000
+        },
+        {
+          "name": "大足区",
+          "adcode": 500111,
+          "housePrice": 16000
+        },
+        {
+          "name": "黔江区",
+          "adcode": 500114,
+          "housePrice": 15000
+        },
+        {
+          "name": "长寿区",
+          "adcode": 500115,
+          "housePrice": 16000
+        },
+        {
+          "name": "江津区",
+          "adcode": 500116,
+          "housePrice": 17000
+        },
+        {
+          "name": "合川区",
+          "adcode": 500117,
+          "housePrice": 16500
+        },
+        {
+          "name": "永川区",
+          "adcode": 500118,
+          "housePrice": 16500
+        },
+        {
+          "name": "南川区",
+          "adcode": 500119,
+          "housePrice": 16000
+        },
+        {
+          "name": "璧山区",
+          "adcode": 500120,
+          "housePrice": 16000
+        },
+        {
+          "name": "铜梁区",
+          "adcode": 500151,
+          "housePrice": 15000
+        },
+        {
+          "name": "潼南区",
+          "adcode": 500152,
+          "housePrice": 15000
+        },
+        {
+          "name": "荣昌区",
+          "adcode": 500153,
+          "housePrice": 15000
+        },
+        {
+          "name": "开州区",
+          "adcode": 500154,
+          "housePrice": 14000
+        },
+        {
+          "name": "梁平区",
+          "adcode": 500155,
+          "housePrice": 14000
+        },
+        {
+          "name": "武隆区",
+          "adcode": 500156,
+          "housePrice": 14000
+        },
+        {
+          "name": "万州区",
+          "adcode": 500101,
+          "housePrice": 15000
+        },
+        {
+          "name": "涪陵区",
+          "adcode": 500102,
+          "housePrice": 14500
+        },
+        {
+          "name": "城口县",
+          "adcode": 500229,
+          "housePrice": 9000
+        },
+        {
+          "name": "丰都县",
+          "adcode": 500230,
+          "housePrice": 9000
+        },
+        {
+          "name": "垫江县",
+          "adcode": 500231,
+          "housePrice": 9000
+        },
+        {
+          "name": "忠县",
+          "adcode": 500233,
+          "housePrice": 9000
+        },
+        {
+          "name": "云阳县",
+          "adcode": 500235,
+          "housePrice": 8500
+        },
+        {
+          "name": "奉节县",
+          "adcode": 500236,
+          "housePrice": 8500
+        },
+        {
+          "name": "巫山县",
+          "adcode": 500237,
+          "housePrice": 8500
+        },
+        {
+          "name": "巫溪县",
+          "adcode": 500238,
+          "housePrice": 8500
+        },
+        {
+          "name": "石柱土家族自治县",
+          "adcode": 500240,
+          "housePrice": 8500
+        },
+        {
+          "name": "秀山土家族苗族自治县",
+          "adcode": 500241,
+          "housePrice": 8000
+        },
+        {
+          "name": "酉阳土家族苗族自治县",
+          "adcode": 500242,
+          "housePrice": 8000
+        },
+        {
+          "name": "彭水苗族土家族自治县",
+          "adcode": 500243,
+          "housePrice": 8000
         }
       ]
     },
@@ -524,6 +799,21 @@
           "name": "资阳市",
           "adcode": 512000,
           "housePrice": 8500
+        },
+        {
+          "name": "阿坝藏族羌族自治州",
+          "adcode": 513200,
+          "housePrice": 8000
+        },
+        {
+          "name": "甘孜藏族自治州",
+          "adcode": 513300,
+          "housePrice": 8000
+        },
+        {
+          "name": "凉山彝族自治州",
+          "adcode": 513400,
+          "housePrice": 8000
         }
       ]
     },
@@ -606,6 +896,16 @@
           "name": "天门市",
           "adcode": 429006,
           "housePrice": 11500
+        },
+        {
+          "name": "恩施土家族苗族自治州",
+          "adcode": 422800,
+          "housePrice": 11000
+        },
+        {
+          "name": "神农架林区",
+          "adcode": 429021,
+          "housePrice": 11000
         }
       ]
     },
@@ -765,6 +1065,11 @@
           "name": "娄底市",
           "adcode": 431300,
           "housePrice": 12000
+        },
+        {
+          "name": "湘西土家族苗族自治州",
+          "adcode": 433100,
+          "housePrice": 11000
         }
       ]
     },
