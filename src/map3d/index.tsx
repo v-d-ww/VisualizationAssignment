@@ -30,6 +30,7 @@ export type ProjectionFnParamType = {
 interface Props {
   geoJson: GeoJsonType;
   dblClickFn: (customProperties: any) => void;
+  onClickFn?: (customProperties: any) => void;
   projectionFnParam: ProjectionFnParamType;
   housePriceData?: any[];
   currentYear?: string;
@@ -40,7 +41,7 @@ interface Props {
 let lastPick: any = null;
 
 function Map3D(props: Props) {
-  const { geoJson, dblClickFn, projectionFnParam, housePriceData, currentYear, currentMonth, showHeatmap = false } = props;
+  const { geoJson, dblClickFn, onClickFn, projectionFnParam, housePriceData, currentYear, currentMonth, showHeatmap = false } = props;
   const mapRef = useRef<any>();
   const map2dRef = useRef<any>();
   const toolTipRef = useRef<any>();
@@ -401,8 +402,47 @@ function Map3D(props: Props) {
       }
     };
 
+    // 鼠标单击事件
+    let clickTimer: ReturnType<typeof setTimeout> | null = null;
+    const onClickEvent = (e: MouseEvent) => {
+      // 检查点击目标是否是按钮或其他UI元素
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'BUTTON' || 
+          target.closest('button') || 
+          target.closest('[role="button"]') ||
+          target.closest('input') ||
+          target.closest('select') ||
+          target.closest('textarea') ||
+          target.closest('a')) {
+        return;
+      }
+      
+      // 检查点击目标是否是地图容器或其子元素
+      if (!currentDom.contains(target) && !map2dRef.current?.contains(target)) {
+        return;
+      }
+      
+      const intersects = raycaster.intersectObjects(scene.children);
+      const mapTarget = intersects.find(
+        (item: any) => item.object.userData.isChangeColor
+      );
+      if (mapTarget && onClickFn) {
+        const obj: any = mapTarget.object.parent;
+        const p = obj.customProperties;
+        // 延迟执行，避免与双击冲突
+        clickTimer = setTimeout(() => {
+          onClickFn(p);
+        }, 200);
+      }
+    };
+
     // 鼠标双击事件
     const onDblclickEvent = () => {
+      // 清除单击定时器
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
       const intersects = raycaster.intersectObjects(scene.children);
       const target = intersects.find(
         (item: any) => item.object.userData.isChangeColor
@@ -467,6 +507,7 @@ function Map3D(props: Props) {
 
     window.addEventListener("resize", onResizeEvent, false);
     window.addEventListener("mousemove", onMouseMoveEvent, false);
+    window.addEventListener("click", onClickEvent, false);
     window.addEventListener("dblclick", onDblclickEvent, false);
 
     // dat.GUI 配置
@@ -600,7 +641,11 @@ function Map3D(props: Props) {
     return () => {
       window.removeEventListener("resize", onResizeEvent);
       window.removeEventListener("mousemove", onMouseMoveEvent);
+      window.removeEventListener("click", onClickEvent);
       window.removeEventListener("dblclick", onDblclickEvent);
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+      }
       gui.destroy();
     };
   }, [geoJson, currentYear, currentMonth, housePriceData, showHeatmap, updateMapColors]);

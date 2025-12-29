@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { callAIAPI } from '../services/aiService';
+import { parseDataQuery, QueryResult } from '../services/dataQueryService';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
   requestId?: string;
+  queryResult?: QueryResult;
 }
 
 function AIChat() {
@@ -34,11 +36,29 @@ function AIChat() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const queryText = input.trim();
     setInput('');
     setLoading(true);
 
     try {
-      const response = await callAIAPI(userMessage.content);
+      // 先尝试解析数据查询
+      const queryResult = parseDataQuery(queryText);
+      
+      if (queryResult) {
+        // 如果有数据查询结果，直接显示
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: queryResult.message,
+          timestamp: new Date(),
+          queryResult
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        setLoading(false);
+        return;
+      }
+
+      // 否则调用AI API
+      const response = await callAIAPI(queryText);
       const assistantMessage: Message = {
         role: 'assistant',
         content: response.answer,
@@ -228,13 +248,21 @@ function AIChat() {
               >
                 <div style={{ marginBottom: 12 }}>💬 欢迎使用AI房价助手</div>
                 <div style={{ fontSize: 12 }}>
-                  您可以询问：
+                  <div style={{ marginBottom: 8, fontWeight: 600, color: '#e2e8f0' }}>📊 数据查询示例：</div>
+                  • "北京2023年房价是多少？"
                   <br />
-                  • 某省份的房价趋势
+                  • "哪些城市房价超过2万？"
                   <br />
-                  • 不同年份的房价对比
+                  • "对比一下北上广深的房价"
                   <br />
-                  • 房价数据分析
+                  • "涨幅最大的10个城市"
+                  <br />
+                  <div style={{ marginTop: 12, marginBottom: 8, fontWeight: 600, color: '#e2e8f0' }}>✨ 新功能入口：</div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                    • 右上角快捷按钮：故事板、预警、标注、推荐、模拟
+                    <br />
+                    • 切换到"智能工具"标签查看所有功能卡片
+                  </div>
                 </div>
               </div>
             )}
@@ -266,6 +294,37 @@ function AIChat() {
                 >
                   {msg.content}
                 </div>
+                {msg.queryResult && msg.queryResult.actions && msg.queryResult.actions.length > 0 && (
+                  <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {msg.queryResult.actions.map((action, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          const event = new CustomEvent('aiAction', { detail: action });
+                          window.dispatchEvent(event);
+                        }}
+                        style={{
+                          padding: '6px 12px',
+                          background: 'rgba(59,130,246,0.2)',
+                          border: '1px solid rgba(59,130,246,0.4)',
+                          borderRadius: 6,
+                          color: '#3b82f6',
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(59,130,246,0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(59,130,246,0.2)';
+                        }}
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div
                   style={{
                     fontSize: 11,
