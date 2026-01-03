@@ -644,15 +644,36 @@ const CalculatorPanel = () => {
   useEffect(() => {
     if (chartRef.current) {
       chartInstanceRef.current = echarts.init(chartRef.current);
+      // 监听窗口大小变化，自动调整图表大小
+      const handleResize = () => {
+        chartInstanceRef.current?.resize();
+      };
+      window.addEventListener('resize', handleResize);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        chartInstanceRef.current?.dispose();
+      };
     }
-    return () => {
-      chartInstanceRef.current?.dispose();
-    };
   }, []);
 
   const renderChart = (option: echarts.EChartsOption) => {
     if (!chartInstanceRef.current) return;
-    chartInstanceRef.current.setOption(option as any, true);
+    // 确保图表容器有尺寸
+    if (chartRef.current) {
+      const rect = chartRef.current.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        chartInstanceRef.current.resize();
+        chartInstanceRef.current.setOption(option as any, true);
+      } else {
+        // 如果容器还没有尺寸，延迟一下再渲染
+        setTimeout(() => {
+          if (chartInstanceRef.current && chartRef.current) {
+            chartInstanceRef.current.resize();
+            chartInstanceRef.current.setOption(option as any, true);
+          }
+        }, 100);
+      }
+    }
   };
 
   // 定义多个地区的颜色
@@ -704,12 +725,52 @@ const CalculatorPanel = () => {
         };
       });
 
+      // 计算所有数据的最小值和最大值，用于设置yAxis范围
+      const allPrices = series.flatMap(s => s.data as number[]).filter(v => v > 0);
+      const minPrice = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+      const maxPrice = allPrices.length > 0 ? Math.max(...allPrices) : 10000;
+      const padding = (maxPrice - minPrice) * 0.1 || 1000;
+
       renderChart({
-        xAxis: { type: "category", data: months.map((m) => m.label) },
-        yAxis: { type: "value" },
+        xAxis: { 
+          type: "category", 
+          data: months.map((m) => m.label),
+          axisLabel: {
+            color: "#94a3b8",
+            fontSize: 11,
+          },
+        },
+        yAxis: { 
+          type: "value",
+          min: minPrice > 0 ? Math.max(0, minPrice - padding) : 0,
+          max: maxPrice > 0 ? maxPrice + padding : 10000,
+          axisLabel: {
+            color: "#94a3b8",
+            fontSize: 11,
+            formatter: (value: number) => {
+              return value >= 10000 ? `${(value / 10000).toFixed(1)}万` : value.toFixed(0);
+            },
+          },
+          splitLine: {
+            lineStyle: {
+              color: "rgba(255,255,255,0.05)",
+            },
+          },
+        },
+        grid: {
+          left: "10%",
+          right: "10%",
+          top: "15%",
+          bottom: "15%",
+        },
         series,
         tooltip: {
           trigger: "axis",
+          backgroundColor: "rgba(5, 7, 15, 0.95)",
+          borderColor: "rgba(255,255,255,0.1)",
+          textStyle: {
+            color: "#e2e8f0",
+          },
           formatter: (params: any) => {
             if (Array.isArray(params)) {
               let result = `${params[0].axisValue}<br/>`;
@@ -739,9 +800,37 @@ const CalculatorPanel = () => {
       const valB = findPrice(data, provinceB, year, month) ?? 0;
       const ratioA = valA ? budget * 10000 / valA : 0;
       const ratioB = valB ? budget * 10000 / valB : 0;
+      const maxRatio = Math.max(ratioA, ratioB);
       renderChart({
-        xAxis: { type: "category", data: ["方案A", "方案B"] },
-        yAxis: { type: "value" },
+        xAxis: { 
+          type: "category", 
+          data: ["方案A", "方案B"],
+          axisLabel: {
+            color: "#94a3b8",
+            fontSize: 11,
+          },
+        },
+        yAxis: { 
+          type: "value",
+          min: 0,
+          max: maxRatio > 0 ? maxRatio * 1.2 : 100,
+          axisLabel: {
+            color: "#94a3b8",
+            fontSize: 11,
+            formatter: (value: number) => `${value.toFixed(1)}㎡`,
+          },
+          splitLine: {
+            lineStyle: {
+              color: "rgba(255,255,255,0.05)",
+            },
+          },
+        },
+        grid: {
+          left: "15%",
+          right: "10%",
+          top: "15%",
+          bottom: "15%",
+        },
         series: [
           {
             type: "bar",
@@ -752,6 +841,11 @@ const CalculatorPanel = () => {
           },
         ],
         tooltip: {
+          backgroundColor: "rgba(5, 7, 15, 0.95)",
+          borderColor: "rgba(255,255,255,0.1)",
+          textStyle: {
+            color: "#e2e8f0",
+          },
           formatter: (p: any) => `${p.name}: 可购面积 ${p.value.toFixed(2)} ㎡`,
         },
       });
@@ -768,14 +862,32 @@ const CalculatorPanel = () => {
           {
             type: "pie",
             radius: ["35%", "65%"],
+            center: ["50%", "50%"],
             data: [
-              { value: purchase, name: "房款" },
-              { value: taxes, name: "税费" },
-              { value: maintenance, name: "维护" },
+              { value: purchase, name: "房款", itemStyle: { color: "#3b82f6" } },
+              { value: taxes, name: "税费", itemStyle: { color: "#f59e0b" } },
+              { value: maintenance, name: "维护", itemStyle: { color: "#22c55e" } },
             ],
+            label: {
+              color: "#e2e8f0",
+              fontSize: 11,
+            },
+            labelLine: {
+              lineStyle: {
+                color: "#94a3b8",
+              },
+            },
           },
         ],
-        tooltip: { trigger: "item" },
+        tooltip: { 
+          trigger: "item",
+          backgroundColor: "rgba(5, 7, 15, 0.95)",
+          borderColor: "rgba(255,255,255,0.1)",
+          textStyle: {
+            color: "#e2e8f0",
+          },
+          formatter: "{b}: {c} 元<br/>({d}%)",
+        },
       });
     }
 
@@ -805,14 +917,32 @@ const CalculatorPanel = () => {
           {
             type: "pie",
             radius: ["35%", "65%"],
+            center: ["50%", "50%"],
             data: [
-              { value: downPay, name: "首付" },
-              { value: loan, name: "贷款本金" },
-              { value: totalInterest, name: "总利息" },
+              { value: downPay, name: "首付", itemStyle: { color: "#3b82f6" } },
+              { value: loan, name: "贷款本金", itemStyle: { color: "#22c55e" } },
+              { value: totalInterest, name: "总利息", itemStyle: { color: "#f59e0b" } },
             ],
+            label: {
+              color: "#e2e8f0",
+              fontSize: 11,
+            },
+            labelLine: {
+              lineStyle: {
+                color: "#94a3b8",
+              },
+            },
           },
         ],
-        tooltip: { trigger: "item", formatter: "{b}: {c} 元<br/>({d}%)" },
+        tooltip: { 
+          trigger: "item", 
+          backgroundColor: "rgba(5, 7, 15, 0.95)",
+          borderColor: "rgba(255,255,255,0.1)",
+          textStyle: {
+            color: "#e2e8f0",
+          },
+          formatter: "{b}: {c} 元<br/>({d}%)" 
+        },
       });
     }
 
@@ -837,9 +967,37 @@ const CalculatorPanel = () => {
         totalInterest = payments.reduce((a, b) => a + b, 0) - loanAmount;
       }
       
+      const maxValue = Math.max(loanAmount, totalInterest, loanAmount + totalInterest);
       renderChart({
-        xAxis: { type: "category", data: ["贷款本金", "总利息", "还款总额"] },
-        yAxis: { type: "value" },
+        xAxis: { 
+          type: "category", 
+          data: ["贷款本金", "总利息", "还款总额"],
+          axisLabel: {
+            color: "#94a3b8",
+            fontSize: 11,
+          },
+        },
+        yAxis: { 
+          type: "value",
+          min: 0,
+          max: maxValue > 0 ? maxValue * 1.1 : 1000000,
+          axisLabel: {
+            color: "#94a3b8",
+            fontSize: 11,
+            formatter: (value: number) => `${(value / 10000).toFixed(1)}万`,
+          },
+          splitLine: {
+            lineStyle: {
+              color: "rgba(255,255,255,0.05)",
+            },
+          },
+        },
+        grid: {
+          left: "15%",
+          right: "10%",
+          top: "15%",
+          bottom: "15%",
+        },
         series: [
           {
             type: "bar",
@@ -850,7 +1008,15 @@ const CalculatorPanel = () => {
             ],
           },
         ],
-        tooltip: { trigger: "axis", formatter: (p: any) => `${p[0].name}: ${(p[0].value / 10000).toFixed(2)} 万` },
+        tooltip: { 
+          trigger: "axis",
+          backgroundColor: "rgba(5, 7, 15, 0.95)",
+          borderColor: "rgba(255,255,255,0.1)",
+          textStyle: {
+            color: "#e2e8f0",
+          },
+          formatter: (p: any) => `${p[0].name}: ${(p[0].value / 10000).toFixed(2)} 万` 
+        },
       });
     }
 

@@ -20,3 +20,39 @@ body {
 #root {
   height: 100%;
 }
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.6);
+  border-radius: 5px;
+  transition: background 0.2s;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.8);
+}
+
+/* 为智能工具模块添加更明显的滚动条 */
+.tool-cards-container::-webkit-scrollbar {
+  width: 12px;
+}
+
+.tool-cards-container::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.7);
+  border: 2px solid rgba(15, 23, 42, 0.8);
+}
+
+.tool-cards-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.9);
+}

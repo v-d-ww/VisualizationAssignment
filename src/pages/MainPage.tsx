@@ -788,23 +788,48 @@ function MainPage() {
 
     return (
       <div
+        className="tool-cards-container"
         style={{
           position: "absolute",
           top: 120,
           left: "50%",
           transform: "translateX(-50%)",
-          zIndex: 998,
+          zIndex: 1000, // 提高z-index，确保在时间轴之上
           display: "grid",
           gridTemplateColumns: "repeat(2, 1fr)",
           gap: 16,
           padding: "16px",
-          background: "rgba(5, 7, 15, 0.75)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          paddingBottom: "200px", // 增加底部padding，避免被时间轴遮挡
+          background: "rgba(5, 7, 15, 0.85)",
+          border: "1px solid rgba(255,255,255,0.1)",
           borderRadius: 16,
           boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-          backdropFilter: "blur(8px)",
+          backdropFilter: "blur(10px)",
           maxWidth: 800,
           width: "90%",
+          height: "calc(100vh - 140px)", // 设置固定高度，强制启用滚动
+          overflowY: "scroll", // 改为scroll，确保滚动条始终显示
+          overflowX: "hidden",
+          // 自定义滚动条样式 - 使其更明显
+          scrollbarWidth: "auto",
+          scrollbarColor: "rgba(59,130,246,0.7) rgba(15,23,42,0.8)",
+          // 确保滚动条可见
+          WebkitOverflowScrolling: "touch",
+        }}
+        onWheel={(e) => {
+          // 确保滚轮事件正常工作
+          const element = e.currentTarget;
+          const { scrollTop, scrollHeight, clientHeight } = element;
+          const isAtTop = scrollTop === 0;
+          const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+          
+          // 如果已经到达顶部或底部，允许事件冒泡
+          if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+            return;
+          }
+          
+          // 否则阻止事件冒泡，确保滚动在容器内进行
+          e.stopPropagation();
         }}
       >
         {tools.map((tool) => (

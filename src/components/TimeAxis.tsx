@@ -12,13 +12,22 @@ function TimeAxis({ onTimeChange, availableYears, availableMonths }: TimeAxisPro
   const [selectedYear, setSelectedYear] = useState<string>(availableYears[0] || "2020");
   const [selectedMonth, setSelectedMonth] = useState<string>("02");
 
-  useEffect(() => {
-    if (!svgRef.current || availableYears.length === 0) return;
+  const renderTimeAxis = useCallback(() => {
+    if (!svgRef.current || availableYears.length === 0) {
+      return () => {}; // 返回一个空的清理函数而不是null
+    }
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const width = 1200;
+    // 获取容器宽度，自适应
+    const container = svgRef.current.parentElement;
+    let containerWidth = 1200; // 默认宽度
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      containerWidth = rect.width - 40; // 减去padding
+    }
+    const width = Math.max(containerWidth, 800); // 最小宽度800px
     const height = 120;
     const margin = { top: 20, right: 40, bottom: 40, left: 40 };
     const chartWidth = width - margin.left - margin.right;
@@ -187,11 +196,29 @@ function TimeAxis({ onTimeChange, availableYears, availableMonths }: TimeAxisPro
     };
 
     svgRef.current?.addEventListener("mousemove", handleMouseMove);
-
+    
+    // 返回清理函数
     return () => {
       svgRef.current?.removeEventListener("mousemove", handleMouseMove);
     };
   }, [availableYears, availableMonths, selectedYear, selectedMonth]);
+
+  useEffect(() => {
+    const cleanup = renderTimeAxis();
+    return cleanup || undefined; // 确保返回undefined而不是null
+  }, [renderTimeAxis]);
+
+  useEffect(() => {
+    // 监听窗口大小变化
+    const handleResize = () => {
+      renderTimeAxis();
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [renderTimeAxis]);
 
   useEffect(() => {
     onTimeChange(selectedYear, selectedMonth);
@@ -200,18 +227,32 @@ function TimeAxis({ onTimeChange, availableYears, availableMonths }: TimeAxisPro
   return (
     <div
       style={{
-        position: "absolute",
+        position: "fixed",
         bottom: 20,
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 1000,
-        background: "rgba(1, 2, 9, 0.9)",
-        padding: "20px",
-        borderRadius: "8px",
-        border: "1px solid rgba(255,255,255,0.1)",
+        left: "380px", // 避开左侧计算器（360px padding + 20px margin）
+        right: "20px", // 右侧留出边距
+        zIndex: 500, // 降低z-index，避免遮挡功能模块和弹窗
+        background: "rgba(1, 2, 9, 0.92)",
+        padding: "16px 20px",
+        borderRadius: "12px",
+        border: "1px solid rgba(255,255,255,0.15)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        backdropFilter: "blur(12px)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        transition: "all 0.3s ease",
       }}
     >
-      <svg ref={svgRef}></svg>
+      <svg 
+        ref={svgRef}
+        style={{
+          width: "100%",
+          height: "120px",
+          minWidth: "800px",
+          maxWidth: "100%",
+        }}
+      ></svg>
       <div
         style={{
           textAlign: "center",

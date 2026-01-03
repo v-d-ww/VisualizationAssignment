@@ -195,7 +195,7 @@ function DataSimulator({ visible, onClose }: Props) {
         position: 'fixed',
         inset: 0,
         background: 'rgba(0,0,0,0.7)',
-        zIndex: 2000,
+        zIndex: 10001, // 提高z-index，确保在所有组件（包括时间轴）之上
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
