@@ -1,6 +1,5 @@
-import { useState, useMemo } from 'react';
-import * as echarts from 'echarts';
-import { useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import * as d3 from 'd3';
 import housePriceData from '../data/housePriceData.json';
 
 interface Scenario {
@@ -8,9 +7,9 @@ interface Scenario {
   name: string;
   description: string;
   factors: {
-    policy: number; // -1 to 1
-    economy: number; // -1 to 1
-    population: number; // -1 to 1
+    policy: number;
+    economy: number;
+    population: number;
   };
 }
 
@@ -28,8 +27,7 @@ function DataSimulator({ visible, onClose }: Props) {
     factors: { policy: 0, economy: 0, population: 0 }
   });
   const [timeHorizon, setTimeHorizon] = useState(5);
-  const chartRef = useRef<HTMLDivElement>(null);
-  const chartInstanceRef = useRef<echarts.ECharts>();
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const scenarios: Scenario[] = [
     {
@@ -84,7 +82,6 @@ function DataSimulator({ visible, onClose }: Props) {
     const lastYear = parseInt(years[years.length - 1]);
     const lastPrice = province.data[years[years.length - 1]]?.average || 0;
     
-    // 计算历史增长率
     const growthRates: number[] = [];
     for (let i = 1; i < historical.length; i++) {
       if (historical[i - 1].price > 0) {
@@ -93,21 +90,14 @@ function DataSimulator({ visible, onClose }: Props) {
     }
     const avgGrowthRate = growthRates.reduce((a, b) => a + b, 0) / growthRates.length;
 
-    // 模拟未来数据
     const simulated = [];
     let currentPrice = lastPrice;
     for (let i = 1; i <= timeHorizon; i++) {
-      // 基础增长率
       let growthRate = avgGrowthRate;
-      
-      // 应用场景因子
       growthRate += scenario.factors.policy * 0.05;
       growthRate += scenario.factors.economy * 0.08;
       growthRate += scenario.factors.population * 0.06;
-      
-      // 添加随机波动
       growthRate += (Math.random() - 0.5) * 0.02;
-      
       currentPrice = currentPrice * (1 + growthRate);
       simulated.push({
         year: (lastYear + i).toString(),
@@ -120,71 +110,169 @@ function DataSimulator({ visible, onClose }: Props) {
   }, [selectedProvince, scenario, timeHorizon]);
 
   useEffect(() => {
-    if (chartRef.current && visible) {
-      chartInstanceRef.current = echarts.init(chartRef.current);
-    }
-    return () => {
-      chartInstanceRef.current?.dispose();
-    };
-  }, [visible]);
+    if (!svgRef.current || !visible) return;
 
-  useEffect(() => {
-    if (!chartInstanceRef.current || !visible) return;
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove();
+
+    const width = 800;
+    const height = 500;
+    const margin = { top: 50, right: 50, bottom: 60, left: 80 };
+
+    const g = svg
+      .attr("width", width)
+      .attr("height", height)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
 
     const historical = simulateData.filter(d => d.type === 'historical');
     const simulated = simulateData.filter(d => d.type === 'simulated');
+    const allData = simulateData;
 
-    chartInstanceRef.current.setOption({
-      title: {
-        text: `${selectedProvince}房价模拟`,
-        left: 'center',
-        textStyle: { color: '#e2e8f0', fontSize: 16 }
-      },
-      tooltip: {
-        trigger: 'axis',
-        formatter: (params: any) => {
-          const param = Array.isArray(params) ? params[0] : params;
-          return `${param.axisValue}<br/>${param.seriesName}: ${param.value.toFixed(0)} 元/㎡`;
-        }
-      },
-      legend: {
-        data: ['历史数据', '模拟数据'],
-        top: 30,
-        textStyle: { color: '#94a3b8' }
-      },
-      xAxis: {
-        type: 'category',
-        data: simulateData.map(d => d.year),
-        axisLabel: { color: '#94a3b8' }
-      },
-      yAxis: {
-        type: 'value',
-        axisLabel: { color: '#94a3b8', formatter: '{value} 元/㎡' }
-      },
-      series: [
-        {
-          name: '历史数据',
-          type: 'line',
-          data: historical.map(d => d.price),
-          smooth: true,
-          lineStyle: { color: '#3b82f6', width: 2 },
-          itemStyle: { color: '#3b82f6' },
-          markLine: {
-            data: [{ xAxis: historical.length - 1 }],
-            lineStyle: { color: '#94a3b8', type: 'dashed' },
-            label: { formatter: '当前', color: '#94a3b8' }
-          }
-        },
-        {
-          name: '模拟数据',
-          type: 'line',
-          data: [...Array(historical.length).fill(null), ...simulated.map(d => d.price)],
-          smooth: true,
-          lineStyle: { color: '#22c55e', width: 2, type: 'dashed' },
-          itemStyle: { color: '#22c55e' }
-        }
-      ]
-    }, true);
+    // 创建比例尺
+    const xScale = d3.scaleBand()
+      .domain(allData.map(d => d.year))
+      .range([0, chartWidth])
+      .padding(0.1);
+
+    const yScale = d3.scaleLinear()
+      .domain([0, d3.max(allData, d => d.price) || 0])
+      .nice()
+      .range([chartHeight, 0]);
+
+    // 创建折线生成器
+    const lineGenerator = d3.line<{year: string; price: number}>()
+      .x(d => (xScale(d.year) || 0) + xScale.bandwidth() / 2)
+      .y(d => yScale(d.price))
+      .curve(d3.curveMonotoneX);
+
+    // 绘制历史数据折线
+    const historicalLine = lineGenerator(historical as any);
+    if (historicalLine) {
+      g.append("path")
+        .datum(historical)
+        .attr("fill", "none")
+        .attr("stroke", "#3b82f6")
+        .attr("stroke-width", 2)
+        .attr("d", historicalLine);
+    }
+
+    // 绘制模拟数据折线
+    const simulatedLine = lineGenerator(simulated as any);
+    if (simulatedLine) {
+      g.append("path")
+        .datum(simulated)
+        .attr("fill", "none")
+        .attr("stroke", "#22c55e")
+        .attr("stroke-width", 2)
+        .attr("stroke-dasharray", "5,5")
+        .attr("d", simulatedLine);
+    }
+
+    // 绘制数据点
+    g.selectAll(".historical-dot")
+      .data(historical)
+      .enter()
+      .append("circle")
+      .attr("class", "historical-dot")
+      .attr("cx", d => (xScale(d.year) || 0) + xScale.bandwidth() / 2)
+      .attr("cy", d => yScale(d.price))
+      .attr("r", 4)
+      .attr("fill", "#3b82f6");
+
+    g.selectAll(".simulated-dot")
+      .data(simulated)
+      .enter()
+      .append("circle")
+      .attr("class", "simulated-dot")
+      .attr("cx", d => (xScale(d.year) || 0) + xScale.bandwidth() / 2)
+      .attr("cy", d => yScale(d.price))
+      .attr("r", 4)
+      .attr("fill", "#22c55e");
+
+    // 绘制分隔线（当前时间）
+    if (historical.length > 0) {
+      const currentX = (xScale(historical[historical.length - 1].year) || 0) + xScale.bandwidth() / 2;
+      g.append("line")
+        .attr("x1", currentX)
+        .attr("x2", currentX)
+        .attr("y1", 0)
+        .attr("y2", chartHeight)
+        .attr("stroke", "#94a3b8")
+        .attr("stroke-width", 1)
+        .attr("stroke-dasharray", "3,3");
+
+      g.append("text")
+        .attr("x", currentX)
+        .attr("y", -10)
+        .attr("text-anchor", "middle")
+        .attr("fill", "#94a3b8")
+        .attr("font-size", 11)
+        .text("当前");
+    }
+
+    // 添加坐标轴
+    const xAxis = d3.axisBottom(xScale);
+    const yAxis = d3.axisLeft(yScale).tickFormat(d => `${d} 元/㎡`);
+
+    g.append("g")
+      .attr("transform", `translate(0,${chartHeight})`)
+      .call(xAxis)
+      .selectAll("text")
+      .attr("fill", "#94a3b8")
+      .attr("font-size", 11);
+
+    g.append("g")
+      .call(yAxis)
+      .selectAll("text")
+      .attr("fill", "#94a3b8")
+      .attr("font-size", 11);
+
+    // 标题
+    g.append("text")
+      .attr("x", chartWidth / 2)
+      .attr("y", -20)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#e2e8f0")
+      .attr("font-size", 16)
+      .attr("font-weight", 600)
+      .text(`${selectedProvince}房价模拟`);
+
+    // 图例
+    const legend = g.append("g").attr("transform", `translate(${chartWidth - 120}, 10)`);
+    legend.append("line")
+      .attr("x1", 0)
+      .attr("x2", 20)
+      .attr("y1", 0)
+      .attr("y2", 0)
+      .attr("stroke", "#3b82f6")
+      .attr("stroke-width", 2);
+    legend.append("text")
+      .attr("x", 25)
+      .attr("y", 0)
+      .attr("dy", "0.35em")
+      .attr("fill", "#94a3b8")
+      .attr("font-size", 11)
+      .text("历史数据");
+
+    legend.append("line")
+      .attr("x1", 0)
+      .attr("x2", 20)
+      .attr("y1", 20)
+      .attr("y2", 20)
+      .attr("stroke", "#22c55e")
+      .attr("stroke-width", 2)
+      .attr("stroke-dasharray", "5,5");
+    legend.append("text")
+      .attr("x", 25)
+      .attr("y", 20)
+      .attr("dy", "0.35em")
+      .attr("fill", "#94a3b8")
+      .attr("font-size", 11)
+      .text("模拟数据");
   }, [simulateData, visible, selectedProvince]);
 
   if (!visible) return null;
@@ -195,7 +283,7 @@ function DataSimulator({ visible, onClose }: Props) {
         position: 'fixed',
         inset: 0,
         background: 'rgba(0,0,0,0.7)',
-        zIndex: 10001, // 提高z-index，确保在所有组件（包括时间轴）之上
+        zIndex: 10001,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -237,7 +325,6 @@ function DataSimulator({ visible, onClose }: Props) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 20 }}>
-          {/* 控制面板 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
               <label style={{ color: '#cbd5e1', fontSize: 14, marginBottom: 8, display: 'block' }}>
@@ -314,66 +401,10 @@ function DataSimulator({ visible, onClose }: Props) {
                 ))}
               </div>
             </div>
-
-            {/* 因子调整 */}
-            <div>
-              <label style={{ color: '#cbd5e1', fontSize: 14, marginBottom: 12, display: 'block' }}>
-                自定义因子
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {Object.entries(scenario.factors).map(([key, value]) => (
-                  <div key={key}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ color: '#94a3b8', fontSize: 12 }}>
-                        {key === 'policy' ? '政策' : key === 'economy' ? '经济' : '人口'}
-                      </span>
-                      <span style={{ color: '#e2e8f0', fontSize: 12 }}>
-                        {(value * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="-1"
-                      max="1"
-                      step="0.1"
-                      value={value}
-                      onChange={(e) => {
-                        setScenario({
-                          ...scenario,
-                          factors: {
-                            ...scenario.factors,
-                            [key]: parseFloat(e.target.value)
-                          }
-                        });
-                      }}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
-          {/* 图表 */}
           <div>
-            <div
-              ref={chartRef}
-              style={{
-                width: '100%',
-                height: 500,
-                background: 'rgba(255,255,255,0.02)',
-                borderRadius: 12
-              }}
-            />
-            <div style={{ marginTop: 16, padding: 16, background: 'rgba(59,130,246,0.1)', borderRadius: 8 }}>
-              <div style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
-                模拟结果
-              </div>
-              <div style={{ color: '#94a3b8', fontSize: 12, lineHeight: 1.6 }}>
-                根据历史数据和场景因子，预测未来{timeHorizon}年{selectedProvince}的房价走势。
-                模拟结果仅供参考，实际价格受多种因素影响。
-              </div>
-            </div>
+            <svg ref={svgRef}></svg>
           </div>
         </div>
       </div>
@@ -382,4 +413,3 @@ function DataSimulator({ visible, onClose }: Props) {
 }
 
 export default DataSimulator;
-

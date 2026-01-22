@@ -20,7 +20,6 @@ import { drawRadar, radarData, RadarOption } from "./radar";
 import { initScene } from "./scene";
 import { mapConfig } from "./mapConfig";
 import { initCamera } from "./camera";
-import * as dat from "dat.gui";
 
 export type ProjectionFnParamType = {
   center: [number, number];
@@ -36,12 +35,21 @@ interface Props {
   currentYear?: string;
   currentMonth?: string;
   showHeatmap?: boolean;
+  selectedProvinces?: number[]; // 选中的省份列表
+  onProvinceSelectChange?: (provinces: number[]) => void; // 省份选择变化回调
+  onColorConfigChange?: (config: {
+    mapColor: string;
+    mapHoverColor: string;
+    mapSideColor1: string;
+    mapSideColor2: string;
+    topLineColor: string;
+  }) => void; // 颜色配置变化回调（用于ColorControlPanel）
 }
 
 let lastPick: any = null;
 
 function Map3D(props: Props) {
-  const { geoJson, dblClickFn, onClickFn, projectionFnParam, housePriceData, currentYear, currentMonth, showHeatmap = false } = props;
+  const { geoJson, dblClickFn, onClickFn, projectionFnParam, housePriceData, currentYear, currentMonth, showHeatmap = false, selectedProvinces = [], onProvinceSelectChange, onColorConfigChange } = props;
   const mapRef = useRef<any>();
   const map2dRef = useRef<any>();
   const toolTipRef = useRef<any>();
@@ -94,6 +102,37 @@ function Map3D(props: Props) {
     return "#42A0F9";
   }, []);
 
+  // 更新选中省份的高亮显示
+  const updateSelectedProvincesHighlight = useCallback(() => {
+    if (!mapObject3DRef.current) return;
+    
+    mapObject3DRef.current.traverse((obj: any) => {
+      if (obj.material && obj.material[0] && obj.userData.isChangeColor && obj.parent && obj.parent.customProperties) {
+        const adcode = obj.parent.customProperties.adcode;
+        const isSelected = selectedProvinces.includes(adcode);
+        
+        if (isSelected) {
+          // 选中状态：金色描边 + 半透明白色填充
+          obj.material[0].emissive.setHex(0xffd700); // 金色
+          obj.material[0].emissiveIntensity = 0.5;
+          obj.material[0].opacity = 0.9;
+          // 保存原始颜色
+          if (!obj.userData.originalColor) {
+            obj.userData.originalColor = obj.material[0].color.clone();
+          }
+        } else {
+          // 恢复原始颜色
+          if (obj.userData.originalColor) {
+            obj.material[0].color.copy(obj.userData.originalColor);
+          }
+          obj.material[0].emissive.setHex(0x000000);
+          obj.material[0].emissiveIntensity = 0;
+          obj.material[0].opacity = mapConfig.mapOpacity;
+        }
+      }
+    });
+  }, [selectedProvinces]);
+
   const updateMapColors = useCallback(() => {
     if (!mapObject3DRef.current || !currentYear || !housePriceData) return;
     if (!showHeatmap && !currentMonth) return;
@@ -141,6 +180,10 @@ function Map3D(props: Props) {
           : getPriceColor(price, maxPrice, minPrice);
         obj.material[0].color.set(color);
         obj.userData.priceColor = color;
+        // 保存原始颜色（如果还没有保存）
+        if (!obj.userData.originalColor) {
+          obj.userData.originalColor = obj.material[0].color.clone();
+        }
       }
     });
   }, [currentYear, currentMonth, housePriceData, showHeatmap, getPriceByTime, getYearAveragePrice, getPriceColor, getHeatmapColor]);
@@ -148,6 +191,13 @@ function Map3D(props: Props) {
   useEffect(() => {
     updateMapColors();
   }, [updateMapColors]);
+
+  // 监听选中省份变化，更新高亮
+  useEffect(() => {
+    if (mapObject3DRef.current) {
+      updateSelectedProvincesHighlight();
+    }
+  }, [selectedProvinces, updateSelectedProvincesHighlight]);
 
   useEffect(() => {
     const currentDom = mapRef.current;
@@ -203,6 +253,76 @@ function Map3D(props: Props) {
     );
     mapObject3DRef.current = mapObject3D;
     scene.add(mapObject3D);
+
+    // 暴露悬停高亮函数给平行坐标图（通过全局函数）
+    (window as any).__highlightProvinceOnMap = (adcode: number | null) => {
+      if (!mapObject3DRef.current) return;
+      
+      mapObject3DRef.current.traverse((obj: any) => {
+        if (obj.material && obj.material[0] && obj.userData.isChangeColor && obj.parent && obj.parent.customProperties) {
+          const provinceAdcode = obj.parent.customProperties.adcode;
+          const isSelected = selectedProvinces?.includes(provinceAdcode);
+          const isHovered = adcode === provinceAdcode;
+          
+          if (isHovered && !isSelected) {
+            // 悬停高亮（临时）
+            obj.material[0].emissive.setHex(0x00ff00); // 绿色
+            obj.material[0].emissiveIntensity = 0.3;
+            obj.material[0].opacity = 0.85;
+          } else if (!isSelected) {
+            // 恢复原始颜色
+            if (obj.userData.originalColor) {
+              obj.material[0].color.copy(obj.userData.originalColor);
+            }
+            obj.material[0].emissive.setHex(0x000000);
+            obj.material[0].emissiveIntensity = 0;
+            obj.material[0].opacity = mapConfig.mapOpacity;
+          }
+        }
+      });
+    };
+
+    // 暴露颜色更新函数给ColorControlPanel（通过全局函数）
+    (window as any).__updateMapColorConfig = (config: {
+      mapColor: string;
+      mapHoverColor: string;
+      mapSideColor1: string;
+      mapSideColor2: string;
+      topLineColor: string;
+    }) => {
+      mapConfig.mapColor = config.mapColor;
+      mapConfig.mapHoverColor = config.mapHoverColor;
+      mapConfig.mapSideColor1 = config.mapSideColor1;
+      mapConfig.mapSideColor2 = config.mapSideColor2;
+      mapConfig.topLineColor = parseInt(config.topLineColor.replace("#", ""), 16);
+      
+      // 更新地图颜色
+      mapObject3D.traverse((obj: any) => {
+        if (obj.material && obj.material[0] && obj.userData.isChangeColor) {
+          // 如果省份已选中，保持高亮；否则更新为新的基础颜色
+          const adcode = obj.parent?.customProperties?.adcode;
+          const isSelected = selectedProvinces?.includes(adcode);
+          if (!isSelected) {
+            obj.material[0].color.set(config.mapColor);
+            obj.userData.priceColor = config.mapColor;
+            if (!obj.userData.originalColor) {
+              obj.userData.originalColor = obj.material[0].color.clone();
+            }
+          }
+        }
+        if (obj.material && obj.material[1] && obj.material[1].uniforms) {
+          if (obj.material[1].uniforms.color1) {
+            obj.material[1].uniforms.color1.value.set(config.mapSideColor1);
+          }
+          if (obj.material[1].uniforms.color2) {
+            obj.material[1].uniforms.color2.value.set(config.mapSideColor2);
+          }
+        }
+        if (obj.type === "Line2" && obj.material) {
+          obj.material.color.set(config.topLineColor);
+        }
+      });
+    };
 
     /**
      * 动态地图缩放大小
@@ -402,7 +522,8 @@ function Map3D(props: Props) {
       }
     };
 
-    // 鼠标单击事件
+
+    // 鼠标单击事件 - 支持多选（优化点击精度）
     let clickTimer: ReturnType<typeof setTimeout> | null = null;
     const onClickEvent = (e: MouseEvent) => {
       // 检查点击目标是否是按钮或其他UI元素
@@ -413,7 +534,8 @@ function Map3D(props: Props) {
           target.closest('input') ||
           target.closest('select') ||
           target.closest('textarea') ||
-          target.closest('a')) {
+          target.closest('a') ||
+          target.closest('svg')) { // 排除SVG元素（图表）
         return;
       }
       
@@ -422,17 +544,79 @@ function Map3D(props: Props) {
         return;
       }
       
+      // 更新射线投射器
+      pointer.x = (e.clientX / currentDom.clientWidth) * 2 - 1;
+      pointer.y = -(e.clientY / currentDom.clientHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      
+      // 获取所有相交对象，按距离排序，选择最近的
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      const mapTarget = intersects.find(
+        (item: any) => item.object.userData.isChangeColor
+      );
+      
+      if (mapTarget) {
+        const obj: any = mapTarget.object.parent;
+        if (!obj || !obj.customProperties) return;
+        
+        const p = obj.customProperties;
+        const adcode = p.adcode;
+        
+        // 延迟执行，避免与双击冲突
+        clickTimer = setTimeout(() => {
+          if (onProvinceSelectChange) {
+            // 多选逻辑：左键点击切换选中状态
+            let newSelected: number[];
+            if (selectedProvinces.includes(adcode)) {
+              // 已选中，取消选中
+              newSelected = selectedProvinces.filter(id => id !== adcode);
+            } else {
+              // 未选中，添加到选中列表（最多5个）
+              if (selectedProvinces.length < 5) {
+                newSelected = [...selectedProvinces, adcode];
+              } else {
+                newSelected = selectedProvinces; // 已达到上限
+              }
+            }
+            onProvinceSelectChange(newSelected);
+          }
+          
+          // 保留原有的onClickFn回调
+          if (onClickFn) {
+            onClickFn(p);
+          }
+        }, 200);
+      }
+    };
+
+    // 鼠标右键事件 - 取消选中
+    const onContextMenuEvent = (e: MouseEvent) => {
+      e.preventDefault(); // 阻止默认右键菜单
+      
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'BUTTON' || 
+          target.closest('button') || 
+          target.closest('[role="button"]')) {
+        return;
+      }
+      
+      if (!currentDom.contains(target) && !map2dRef.current?.contains(target)) {
+        return;
+      }
+      
       const intersects = raycaster.intersectObjects(scene.children);
       const mapTarget = intersects.find(
         (item: any) => item.object.userData.isChangeColor
       );
-      if (mapTarget && onClickFn) {
+      
+      if (mapTarget && onProvinceSelectChange) {
         const obj: any = mapTarget.object.parent;
         const p = obj.customProperties;
-        // 延迟执行，避免与双击冲突
-        clickTimer = setTimeout(() => {
-          onClickFn(p);
-        }, 200);
+        const adcode = p.adcode;
+        
+        // 右键取消选中
+        const newSelected = selectedProvinces.filter(id => id !== adcode);
+        onProvinceSelectChange(newSelected);
       }
     };
 
@@ -509,132 +693,14 @@ function Map3D(props: Props) {
     window.addEventListener("mousemove", onMouseMoveEvent, false);
     window.addEventListener("click", onClickEvent, false);
     window.addEventListener("dblclick", onDblclickEvent, false);
+    window.addEventListener("contextmenu", onContextMenuEvent, false);
 
-    // dat.GUI 配置
-    const gui = new dat.GUI();
-    gui.width = 300;
-    const colorConfig = {
-      mapColor: mapConfig.mapColor,
-      mapHoverColor: mapConfig.mapHoverColor,
-      mapSideColor1: mapConfig.mapSideColor1,
-      mapSideColor2: mapConfig.mapSideColor2,
-      topLineColor:
-        typeof mapConfig.topLineColor === "number"
-          ? `#${mapConfig.topLineColor.toString(16)}`
-          : mapConfig.topLineColor,
-    };
-    gui
-      .addColor(colorConfig, "mapColor")
-      .name("地图颜色")
-      .onChange((value: string) => {
-        mapConfig.mapColor = value;
-        // 实时更新所有地图mesh颜色
-        mapObject3D.traverse((obj: any) => {
-          if (obj.material && obj.material[0] && obj.userData.isChangeColor) {
-            obj.material[0].color.set(value);
-          }
-        });
-      });
-    gui
-      .addColor(colorConfig, "mapHoverColor")
-      .name("地图Hover颜色")
-      .onChange((value: string) => {
-        mapConfig.mapHoverColor = value;
-      });
-    gui
-      .addColor(colorConfig, "mapSideColor1")
-      .name("侧面渐变1")
-      .onChange((value: string) => {
-        mapConfig.mapSideColor1 = value;
-        mapObject3D.traverse((obj: any) => {
-          if (
-            obj.material &&
-            obj.material[1] &&
-            obj.material[1].uniforms &&
-            obj.material[1].uniforms.color1
-          ) {
-            obj.material[1].uniforms.color1.value.set(value);
-          }
-        });
-      });
-    gui
-      .addColor(colorConfig, "mapSideColor2")
-      .name("侧面渐变2")
-      .onChange((value: string) => {
-        mapConfig.mapSideColor2 = value;
-        mapObject3D.traverse((obj: any) => {
-          if (
-            obj.material &&
-            obj.material[1] &&
-            obj.material[1].uniforms &&
-            obj.material[1].uniforms.color2
-          ) {
-            obj.material[1].uniforms.color2.value.set(value);
-          }
-        });
-      });
-    gui
-      .addColor(colorConfig, "topLineColor")
-      .name("顶线颜色")
-      .onChange((value: string) => {
-        // 修正类型，将颜色字符串转为number
-        mapConfig.topLineColor = parseInt(value.replace("#", ""), 16);
-        mapObject3D.traverse((obj: any) => {
-          if (obj.type === "Line2" && obj.material) {
-            obj.material.color.set(value);
-          }
-        });
-      });
-
-    // dat.GUI 控制显示/隐藏辅助对象
-    const helperConfig = {
-      cameraHelper: true,
-      axesHelper: true,
-      lightHelper: true,
-    };
-    gui
-      .add(helperConfig, "cameraHelper")
-      .name("显示CameraHelper")
-      .onChange((v: boolean) => {
-        if (v) {
-          scene.add(cameraHelper);
-        } else {
-          scene.remove(cameraHelper);
-        }
-      });
-    gui
-      .add(helperConfig, "axesHelper")
-      .name("显示AxesHelper")
-      .onChange((v: boolean) => {
-        if (v) {
-          scene.add(axesHelper);
-        } else {
-          scene.remove(axesHelper);
-        }
-      });
-    gui
-      .add(helperConfig, "lightHelper")
-      .name("显示LightHelper")
-      .onChange((v: boolean) => {
-        if (v) {
-          scene.add(lightHelper);
-        } else {
-          scene.remove(lightHelper);
-        }
-      });
-
-    // 光强度调节
-    const lightConfig = { intensity: light.intensity };
-    gui
-      .add(lightConfig, "intensity", 0, 5)
-      .name("光强度")
-      .onChange((v: number) => {
-        light.intensity = v;
-      });
+    // dat.GUI 已移除，颜色设置功能移至悬浮球按钮（ColorControlPanel组件）
 
     if (mapObject3DRef.current && currentYear && housePriceData) {
       setTimeout(() => {
         updateMapColors();
+        updateSelectedProvincesHighlight();
       }, 100);
     }
 
@@ -643,12 +709,12 @@ function Map3D(props: Props) {
       window.removeEventListener("mousemove", onMouseMoveEvent);
       window.removeEventListener("click", onClickEvent);
       window.removeEventListener("dblclick", onDblclickEvent);
+      window.removeEventListener("contextmenu", onContextMenuEvent);
       if (clickTimer) {
         clearTimeout(clickTimer);
       }
-      gui.destroy();
     };
-  }, [geoJson, currentYear, currentMonth, housePriceData, showHeatmap, updateMapColors]);
+  }, [geoJson, currentYear, currentMonth, housePriceData, showHeatmap, updateMapColors, selectedProvinces, onProvinceSelectChange, updateSelectedProvincesHighlight, onClickFn, dblClickFn, projectionFnParam]);
 
   return (
     <div

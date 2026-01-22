@@ -3,11 +3,12 @@ import * as d3 from "d3";
 
 interface TimeAxisProps {
   onTimeChange: (year: string, month: string) => void;
+  onTimePreview?: (year: string | null, month: string | null) => void; // 悬停预览回调
   availableYears: string[];
   availableMonths: string[];
 }
 
-function TimeAxis({ onTimeChange, availableYears, availableMonths }: TimeAxisProps) {
+function TimeAxis({ onTimeChange, onTimePreview, availableYears, availableMonths }: TimeAxisProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [selectedYear, setSelectedYear] = useState<string>(availableYears[0] || "2020");
   const [selectedMonth, setSelectedMonth] = useState<string>("02");
@@ -188,20 +189,31 @@ function TimeAxis({ onTimeChange, availableYears, availableMonths }: TimeAxisPro
           });
 
           if (month) {
-            setSelectedYear(year);
-            setSelectedMonth(month);
+            // 悬停预览：触发预览回调，但不更新选中状态
+            if (onTimePreview) {
+              onTimePreview(year, month);
+            }
           }
         }
       }
     };
 
+    const handleMouseLeave = () => {
+      // 鼠标离开时，恢复当前选中的时间
+      if (onTimePreview) {
+        onTimePreview(null, null);
+      }
+    };
+
     svgRef.current?.addEventListener("mousemove", handleMouseMove);
+    svgRef.current?.addEventListener("mouseleave", handleMouseLeave);
     
     // 返回清理函数
     return () => {
       svgRef.current?.removeEventListener("mousemove", handleMouseMove);
+      svgRef.current?.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [availableYears, availableMonths, selectedYear, selectedMonth]);
+  }, [availableYears, availableMonths, selectedYear, selectedMonth, onTimePreview]);
 
   useEffect(() => {
     const cleanup = renderTimeAxis();

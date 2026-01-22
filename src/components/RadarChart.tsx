@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import * as echarts from "echarts";
+import { useEffect, useMemo, useRef } from "react";
+import * as d3 from "d3";
 import housePriceData from "../data/housePriceData.json";
 
 interface RadarChartProps {
-  visible: boolean;
-  onClose?: () => void;
+  selectedProvinces?: number[]; // 联动参数：选中的省份列表（最多5个）
+  currentYear?: string; // 联动参数：当前年份
+  currentMonth?: string; // 联动参数：当前月份
+  width?: number;
+  height?: number;
 }
 
 type Option = { label: string; value: string | number };
@@ -34,20 +37,6 @@ const getProvinceOptions = (data: ProvinceRecord[]): Option[] =>
   data
     .filter((p) => p.name && p.adcode !== 100000)
     .map((p) => ({ label: p.name, value: p.adcode }));
-
-const findPrice = (
-  data: ProvinceRecord[],
-  adcode: number,
-  year: string,
-  month?: string
-): number | null => {
-  const rec = data.find((p) => p.adcode === adcode);
-  if (!rec || !rec.data) return null;
-  const y = rec.data[year];
-  if (!y) return null;
-  if (month) return (y as any)[month] ?? null;
-  return y.average ?? null;
-};
 
 const calculateRadarDimensions = (
   data: ProvinceRecord[],
@@ -159,128 +148,53 @@ const regionColors = [
   { line: "#a855f7", area: "rgba(168,85,247,0.3)" },
 ];
 
-const MultiSelectPicker = ({
-  options,
-  selectedValues,
-  onChange,
-  maxSelect = 5,
-}: {
-  options: Option[];
-  selectedValues: number[];
-  onChange: (values: number[]) => void;
-  maxSelect?: number;
-}) => {
-  const handleToggle = (value: number) => {
-    if (selectedValues.includes(value)) {
-      onChange(selectedValues.filter((v) => v !== value));
-    } else {
-      if (selectedValues.length < maxSelect) {
-        onChange([...selectedValues, value]);
-      }
-    }
-  };
-
-  return (
-    <div
-      style={{
-        maxHeight: 200,
-        overflowY: "auto",
-        borderRadius: 10,
-        border: "1px solid rgba(255,255,255,0.08)",
-        background: "linear-gradient(180deg, rgba(59,130,246,0.08), rgba(15,23,42,0.5))",
-        padding: 6,
-      }}
-    >
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {options.map((opt) => {
-          const isSelected = selectedValues.includes(opt.value as number);
-          const isDisabled = !isSelected && selectedValues.length >= maxSelect;
-          return (
-            <div
-              key={opt.value}
-              onClick={() => !isDisabled && handleToggle(opt.value as number)}
-              style={{
-                padding: "8px 10px",
-                borderRadius: 8,
-                cursor: isDisabled ? "not-allowed" : "pointer",
-                background: isSelected
-                  ? "rgba(59,130,246,0.3)"
-                  : "rgba(255,255,255,0.04)",
-                border: isSelected
-                  ? "1px solid rgba(59,130,246,0.6)"
-                  : "1px solid rgba(255,255,255,0.04)",
-                color: isSelected
-                  ? "#e2e8f0"
-                  : isDisabled
-                  ? "#64748b"
-                  : "#94a3b8",
-                fontWeight: isSelected ? 700 : 500,
-                transition: "all 0.2s",
-                opacity: isDisabled ? 0.5 : 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <span>{opt.label}</span>
-              {isSelected && (
-                <span style={{ fontSize: 12, color: "#3b82f6", fontWeight: 700 }}>✓</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      {selectedValues.length > 0 && (
-        <div
-          style={{
-            marginTop: 8,
-            padding: "6px 10px",
-            borderRadius: 6,
-            background: "rgba(59,130,246,0.1)",
-            fontSize: 12,
-            color: "#94a3b8",
-            textAlign: "center",
-          }}
-        >
-          已选择 {selectedValues.length}/{maxSelect} 个地区
-        </div>
-      )}
-    </div>
-  );
-};
-
-function RadarChart({ visible, onClose }: RadarChartProps) {
+function RadarChart({
+  selectedProvinces = [],
+  currentYear = "2024",
+  width = 400,
+  height = 400,
+}: RadarChartProps) {
+  const svgRef = useRef<SVGSVGElement>(null);
   const provinces = useMemo(
     () => getProvinceOptions(housePriceData as ProvinceRecord[]),
     []
   );
-  const [selectedProvinces, setSelectedProvinces] = useState<number[]>(
-    [(provinces[0]?.value as number) || 110000]
-  );
-  const chartRef = useRef<HTMLDivElement>(null);
-  const chartInstanceRef = useRef<echarts.ECharts>();
+
+  // 如果没有选中省份，使用第一个省份作为默认值
+  const activeProvinces = selectedProvinces.length > 0 
+    ? selectedProvinces.slice(0, 5) // 最多5个
+    : [(provinces[0]?.value as number) || 110000];
 
   useEffect(() => {
-    if (chartRef.current && visible) {
-      chartInstanceRef.current = echarts.init(chartRef.current);
-    }
-    return () => {
-      chartInstanceRef.current?.dispose();
-    };
-  }, [visible]);
+    if (!svgRef.current) return;
 
-  useEffect(() => {
-    if (!visible || !chartInstanceRef.current) return;
-    if (selectedProvinces.length === 0) {
-      chartInstanceRef.current.setOption({
-        radar: { indicator: [] },
-        series: [],
-      });
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove();
+
+    const margin = { top: 50, right: 40, bottom: 60, left: 40 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+    const radius = Math.min(chartWidth, chartHeight) / 2 - 30;
+
+    const g = svg
+      .attr("width", width)
+      .attr("height", height)
+      .append("g")
+      .attr("transform", `translate(${width / 2},${height / 2})`);
+
+    const data = housePriceData as ProvinceRecord[];
+    const radarData = calculateRadarData(data, activeProvinces);
+
+    if (radarData.dimensions.length === 0) {
+      g.append("text")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("text-anchor", "middle")
+        .attr("fill", "#94a3b8")
+        .text("暂无数据");
       return;
     }
 
-    const data = housePriceData as ProvinceRecord[];
-    const radarData = calculateRadarData(data, selectedProvinces);
     const dimensionNames = [
       "房价水平",
       "近5年涨幅",
@@ -290,260 +204,221 @@ function RadarChart({ visible, onClose }: RadarChartProps) {
       "限购政策强度",
     ];
 
-    const indicators = dimensionNames.map((name) => ({
-      name,
-      max: 1,
-      min: 0,
-    }));
+    const angleSlice = (Math.PI * 2) / dimensionNames.length;
 
-    const seriesData = selectedProvinces.map((adcode, index) => {
-      const provinceName =
-        provinces.find((p) => p.value === adcode)?.label || `地区${index + 1}`;
-      const colorConfig = regionColors[index % regionColors.length];
+    // 绘制网格线
+    const levels = 5;
+    for (let level = 1; level <= levels; level++) {
+      const levelRadius = (radius * level) / levels;
+      const levelData = dimensionNames.map((_, i) => {
+        const angle = i * angleSlice - Math.PI / 2;
+        return {
+          x: Math.cos(angle) * levelRadius,
+          y: Math.sin(angle) * levelRadius,
+        };
+      });
+
+      const lineGenerator = d3
+        .line<{ x: number; y: number }>()
+        .x((d) => d.x)
+        .y((d) => d.y)
+        .curve(d3.curveLinearClosed);
+
+      g.append("path")
+        .datum(levelData)
+        .attr("d", lineGenerator)
+        .attr("fill", level === levels ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)")
+        .attr("stroke", "rgba(255,255,255,0.1)")
+        .attr("stroke-width", 1);
+    }
+
+    // 绘制轴线
+    dimensionNames.forEach((name, i) => {
+      const angle = i * angleSlice - Math.PI / 2;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+
+      g.append("line")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", x)
+        .attr("y2", y)
+        .attr("stroke", "rgba(255,255,255,0.15)")
+        .attr("stroke-width", 1);
+
+      // 标签
+      const labelRadius = radius + 25;
+      const labelX = Math.cos(angle) * labelRadius;
+      const labelY = Math.sin(angle) * labelRadius;
+
+      g.append("text")
+        .attr("x", labelX)
+        .attr("y", labelY)
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "middle")
+        .attr("fill", "#cbd5e1")
+        .attr("font-size", 11)
+        .text(name);
+    });
+
+    // 绘制全国平均值（虚线）
+    const averagePoints = radarData.averages.map((value, i) => {
+      const angle = i * angleSlice - Math.PI / 2;
+      const r = value * radius;
       return {
-        value: radarData.normalized[index] || [],
-        name: provinceName,
-        itemStyle: { color: colorConfig.line },
-        areaStyle: { color: colorConfig.area },
-        lineStyle: { color: colorConfig.line, width: 2 },
+        x: Math.cos(angle) * r,
+        y: Math.sin(angle) * r,
       };
     });
 
-    seriesData.push({
-      value: radarData.averages,
-      name: "全国平均值",
-      itemStyle: { color: "#94a3b8" },
-      lineStyle: { color: "#94a3b8", width: 1, type: "dashed" } as any,
-      areaStyle: { color: "transparent" },
+    const areaGenerator = d3
+      .line<{ x: number; y: number }>()
+      .x((d) => d.x)
+      .y((d) => d.y)
+      .curve(d3.curveLinearClosed);
+
+    g.append("path")
+      .datum(averagePoints)
+      .attr("d", areaGenerator)
+      .attr("fill", "none")
+      .attr("stroke", "#94a3b8")
+      .attr("stroke-width", 1)
+      .attr("stroke-dasharray", "5,5")
+      .attr("opacity", 0.6);
+
+    // 绘制每个省份的数据
+    activeProvinces.forEach((adcode, index) => {
+      const normalized = radarData.normalized[index];
+      if (!normalized) return;
+
+      const provinceName = provinces.find((p) => p.value === adcode)?.label || `省份${index + 1}`;
+      const colorConfig = regionColors[index % regionColors.length];
+
+      const dataPoints = normalized.map((value, i) => {
+        const angle = i * angleSlice - Math.PI / 2;
+        const r = value * radius;
+        return {
+          x: Math.cos(angle) * r,
+          y: Math.sin(angle) * r,
+          value,
+          dimension: dimensionNames[i],
+          rawValue: radarData.dimensions[index][
+            Object.keys(radarData.minMax)[i] as keyof RadarDimension
+          ],
+        };
+      });
+
+      // 填充区域
+      g.append("path")
+        .datum(dataPoints)
+        .attr("d", areaGenerator)
+        .attr("fill", colorConfig.area)
+        .attr("stroke", "none")
+        .attr("opacity", 0.3);
+
+      // 数据线
+      g.append("path")
+        .datum(dataPoints)
+        .attr("d", areaGenerator)
+        .attr("fill", "none")
+        .attr("stroke", colorConfig.line)
+        .attr("stroke-width", 2);
+
+      // 数据点
+      dataPoints.forEach((point) => {
+        g.append("circle")
+          .attr("cx", point.x)
+          .attr("cy", point.y)
+          .attr("r", 3)
+          .attr("fill", colorConfig.line)
+          .attr("stroke", "#fff")
+          .attr("stroke-width", 1);
+      });
     });
 
-    const dimLabels = ["房价水平", "近5年涨幅", "房价收入比", "人均GDP增长率", "常住人口增长率", "限购政策强度"];
-    const dimUnits = ["元/㎡", "%", "", "%", "%", "分"];
-
-    chartInstanceRef.current.setOption({
-      title: {
-        text: `多维度对比分析 - ${selectedProvinces.map((adcode) => provinces.find((p) => p.value === adcode)?.label).join(" vs ")}`,
-        left: "center",
-        top: 10,
-        textStyle: {
-          color: "#e2e8f0",
-          fontSize: 14,
-          fontWeight: 600,
-        },
-      },
-      radar: {
-        indicator: indicators,
-        center: ["50%", "55%"],
-        radius: "65%",
-        axisName: {
-          color: "#cbd5e1",
-          fontSize: 12,
-        },
-        splitArea: {
-          show: true,
-          areaStyle: {
-            color: ["rgba(255,255,255,0.02)", "rgba(255,255,255,0.04)"],
-          },
-        },
-        splitLine: {
-          lineStyle: {
-            color: "rgba(255,255,255,0.1)",
-          },
-        },
-        axisLine: {
-          lineStyle: {
-            color: "rgba(255,255,255,0.15)",
-          },
-        },
-      },
-      series: [
-        {
-          type: "radar",
-          data: seriesData,
-          emphasis: {
-            areaStyle: {
-              color: "rgba(59,130,246,0.2)",
-            },
-          },
-        },
-      ],
-      tooltip: {
-        trigger: "item",
-        formatter: (params: any) => {
-          const dimLabels = ["房价水平", "近5年涨幅", "房价收入比", "人均GDP增长率", "常住人口增长率", "限购政策强度"];
-          const dimUnits = ["元/㎡", "%", "", "%", "%", "分"];
-          
-          if (Array.isArray(params)) {
-            const dimensionIndex = params[0]?.dataIndex;
-            if (dimensionIndex !== undefined) {
-              let result = `${dimLabels[dimensionIndex]}<br/>`;
-              params.forEach((item: any) => {
-                const seriesIndex = item.seriesIndex;
-                if (seriesIndex < radarData.dimensions.length) {
-                  const dim = radarData.dimensions[seriesIndex];
-                  const dimKeys: (keyof RadarDimension)[] = [
-                    "priceLevel",
-                    "priceIncrease5Y",
-                    "priceToIncomeRatio",
-                    "gdpGrowthRate",
-                    "populationGrowthRate",
-                    "purchaseRestriction",
-                  ];
-                  const value = dim[dimKeys[dimensionIndex]];
-                  result += `${item.marker}${item.seriesName}: ${value.toFixed(2)}${dimUnits[dimensionIndex]}<br/>`;
-                } else if (item.seriesName === "全国平均值") {
-                  result += `${item.marker}${item.seriesName}: 参考基准<br/>`;
-                }
-              });
-              return result;
-            }
-          }
-          
-          const item = params;
-          const dimensionIndex = item.dataIndex;
-          const seriesIndex = item.seriesIndex;
-          
-          if (item.seriesName === "全国平均值") {
-            return `${dimLabels[dimensionIndex]}<br/>${item.seriesName}: 参考基准`;
-          }
-          
-          if (dimensionIndex !== undefined && seriesIndex !== undefined && seriesIndex < radarData.dimensions.length) {
-            const dim = radarData.dimensions[seriesIndex];
-            const dimKeys: (keyof RadarDimension)[] = [
-              "priceLevel",
-              "priceIncrease5Y",
-              "priceToIncomeRatio",
-              "gdpGrowthRate",
-              "populationGrowthRate",
-              "purchaseRestriction",
-            ];
-            const value = dim[dimKeys[dimensionIndex]];
-            return `${item.seriesName}<br/>${dimLabels[dimensionIndex]}: ${value.toFixed(2)}${dimUnits[dimensionIndex]}`;
-          }
-          
-          return `${item.seriesName}: ${item.value.toFixed(2)}`;
-        },
-      },
-      legend: {
-        show: true,
-        bottom: 10,
-        textStyle: {
-          color: "#e2e8f0",
-          fontSize: 12,
-        },
-        itemWidth: 14,
-        itemHeight: 10,
-      },
+    // 图例
+    const legend = g.append("g").attr("class", "legend").attr("transform", `translate(${-width / 2 + 20},${height / 2 - 40})`);
+    
+    activeProvinces.forEach((adcode, index) => {
+      const provinceName = provinces.find((p) => p.value === adcode)?.label || `省份${index + 1}`;
+      const colorConfig = regionColors[index % regionColors.length];
+      
+      const legendItem = legend.append("g").attr("transform", `translate(0,${index * 20})`);
+      
+      legendItem
+        .append("line")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", 15)
+        .attr("y2", 0)
+        .attr("stroke", colorConfig.line)
+        .attr("stroke-width", 2);
+      
+      legendItem
+        .append("text")
+        .attr("x", 20)
+        .attr("y", 4)
+        .attr("fill", "#e2e8f0")
+        .attr("font-size", 11)
+        .text(provinceName);
     });
-  }, [visible, selectedProvinces, provinces]);
 
-  if (!visible) return null;
+    // 添加全国平均值图例
+    if (activeProvinces.length > 0) {
+      const avgLegend = legend.append("g").attr("transform", `translate(0,${activeProvinces.length * 20})`);
+      avgLegend
+        .append("line")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", 15)
+        .attr("y2", 0)
+        .attr("stroke", "#94a3b8")
+        .attr("stroke-width", 1)
+        .attr("stroke-dasharray", "5,5");
+      avgLegend
+        .append("text")
+        .attr("x", 20)
+        .attr("y", 4)
+        .attr("fill", "#94a3b8")
+        .attr("font-size", 11)
+        .text("全国平均值");
+    }
+
+    // 标题
+    g.append("text")
+      .attr("x", 0)
+      .attr("y", -radius - 50)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#e2e8f0")
+      .attr("font-size", 14)
+      .attr("font-weight", 600)
+      .text(activeProvinces.length > 0 
+        ? `多省份对比分析 (${activeProvinces.length}个)`
+        : "多维度分析");
+    
+    // 任务标签
+    g.append("text")
+      .attr("x", 0)
+      .attr("y", -radius - 30)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#3b82f6")
+      .attr("font-size", 11)
+      .text("🔹 核心任务：评估省份房价健康度");
+  }, [activeProvinces, currentYear, width, height, provinces]);
 
   return (
     <div
       style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0, 0, 0, 0.7)",
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backdropFilter: "blur(4px)",
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget && onClose) {
-          onClose();
-        }
+        width: width,
+        height: height,
+        background: "rgba(255,255,255,0.02)",
+        borderRadius: 12,
+        padding: 12,
       }}
     >
-      <div
-        style={{
-          width: "90%",
-          maxWidth: 1200,
-          height: "85%",
-          background: "rgba(5, 7, 15, 0.95)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 16,
-          padding: 24,
-          display: "flex",
-          flexDirection: "column",
-          gap: 20,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ color: "#e2e8f0", margin: 0, fontSize: 20, fontWeight: 700 }}>
-            雷达图 - 多维度对比分析
-          </h2>
-          {onClose && (
-            <button
-              onClick={onClose}
-              style={{
-                padding: "8px 16px",
-                background: "rgba(239, 68, 68, 0.2)",
-                color: "#ef4444",
-                border: "1px solid rgba(239, 68, 68, 0.3)",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 14,
-                fontWeight: 600,
-              }}
-            >
-              关闭
-            </button>
-          )}
-        </div>
-        <div style={{ display: "flex", gap: 20, flex: 1, minHeight: 0 }}>
-          <div style={{ width: 300, display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ color: "#cbd5e1", fontSize: 14, fontWeight: 600 }}>
-              地区选择（最多5个）
-            </div>
-            <MultiSelectPicker
-              options={provinces}
-              selectedValues={selectedProvinces}
-              onChange={setSelectedProvinces}
-              maxSelect={5}
-            />
-            <div
-              style={{
-                padding: 12,
-                borderRadius: 8,
-                background: "rgba(59,130,246,0.1)",
-                fontSize: 12,
-                color: "#94a3b8",
-                lineHeight: 1.6,
-              }}
-            >
-              <div style={{ fontWeight: 600, color: "#cbd5e1", marginBottom: 4 }}>
-                维度说明：
-              </div>
-              <div>• 房价水平：当前房价（元/㎡）</div>
-              <div>• 近5年涨幅：2020-2024年涨幅（%）</div>
-              <div>• 房价收入比：房价与收入比值</div>
-              <div>• 人均GDP增长率：经济增长指标（%）</div>
-              <div>• 常住人口增长率：人口变化指标（%）</div>
-              <div>• 限购政策强度：政策严格程度（1-10分）</div>
-            </div>
-          </div>
-          <div
-            ref={chartRef}
-            style={{
-              flex: 1,
-              minHeight: 0,
-              borderRadius: 12,
-              background: "rgba(255,255,255,0.02)",
-            }}
-          />
-        </div>
-      </div>
+      <svg ref={svgRef} style={{ width: "100%", height: "100%" }} />
     </div>
   );
 }
 
 export default RadarChart;
-

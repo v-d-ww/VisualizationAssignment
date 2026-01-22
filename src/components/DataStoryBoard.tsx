@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import * as echarts from 'echarts';
+import * as d3 from 'd3';
 import housePriceData from '../data/housePriceData.json';
 
 interface StoryPoint {
@@ -19,11 +19,9 @@ function DataStoryBoard({ visible, onClose }: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playSpeed, setPlaySpeed] = useState(1);
-  const chartRef = useRef<HTMLDivElement>(null);
-  const chartInstanceRef = useRef<echarts.ECharts>();
+  const svgRef = useRef<SVGSVGElement>(null);
   const playTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 故事点数据
   const storyPoints: StoryPoint[] = [
     {
       year: '2020',
@@ -58,64 +56,105 @@ function DataStoryBoard({ visible, onClose }: Props) {
   ];
 
   useEffect(() => {
-    if (chartRef.current && visible) {
-      chartInstanceRef.current = echarts.init(chartRef.current);
-    }
-    return () => {
-      chartInstanceRef.current?.dispose();
-    };
-  }, [visible]);
+    if (!svgRef.current || !visible) return;
 
-  const renderChart = (year: string, highlight: string[] = []) => {
-    if (!chartInstanceRef.current) return;
-    
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove();
+
+    const width = 1000;
+    const height = 400;
+    const margin = { top: 50, right: 50, bottom: 80, left: 80 };
+
+    const g = svg
+      .attr("width", width)
+      .attr("height", height)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+
     const data = housePriceData as any[];
     const provinces = data.filter(p => p.adcode !== 100000);
+    const currentPoint = storyPoints[currentIndex];
     
     const chartData = provinces.map(p => {
-      const price = p.data[year]?.average || 0;
+      const price = p.data[currentPoint.year]?.average || 0;
       return {
         name: p.name,
         value: price,
-        itemStyle: {
-          color: highlight.includes(p.name) ? '#ef4444' : '#3b82f6'
-        }
+        highlighted: currentPoint.highlight?.includes(p.name) || false
       };
     }).filter(d => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 10);
 
-    chartInstanceRef.current.setOption({
-      title: {
-        text: `${year}年房价TOP10`,
-        left: 'center',
-        textStyle: { color: '#e2e8f0', fontSize: 16 }
-      },
-      tooltip: {
-        trigger: 'item',
-        formatter: '{b}: {c} 元/㎡'
-      },
-      xAxis: {
-        type: 'category',
-        data: chartData.map(d => d.name),
-        axisLabel: { color: '#94a3b8', rotate: 45 }
-      },
-      yAxis: {
-        type: 'value',
-        axisLabel: { color: '#94a3b8' }
-      },
-      series: [{
-        type: 'bar',
-        data: chartData,
-        itemStyle: {
-          borderRadius: [4, 4, 0, 0]
-        }
-      }]
-    }, true);
-  };
+    // 创建比例尺
+    const xScale = d3.scaleBand()
+      .domain(chartData.map(d => d.name))
+      .range([0, chartWidth])
+      .padding(0.2);
 
-  useEffect(() => {
-    if (visible && storyPoints[currentIndex]) {
-      renderChart(storyPoints[currentIndex].year, storyPoints[currentIndex].highlight || []);
-    }
+    const yScale = d3.scaleLinear()
+      .domain([0, d3.max(chartData, d => d.value) || 0])
+      .nice()
+      .range([chartHeight, 0]);
+
+    // 绘制柱状图
+    g.selectAll(".bar")
+      .data(chartData)
+      .enter()
+      .append("rect")
+      .attr("class", "bar")
+      .attr("x", d => xScale(d.name) || 0)
+      .attr("y", d => yScale(d.value))
+      .attr("width", xScale.bandwidth())
+      .attr("height", d => chartHeight - yScale(d.value))
+      .attr("fill", d => d.highlighted ? "#ef4444" : "#3b82f6")
+      .attr("rx", 4)
+      .attr("ry", 4);
+
+    // 添加数值标签
+    g.selectAll(".bar-label")
+      .data(chartData)
+      .enter()
+      .append("text")
+      .attr("class", "bar-label")
+      .attr("x", d => (xScale(d.name) || 0) + xScale.bandwidth() / 2)
+      .attr("y", d => yScale(d.value) - 5)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#e2e8f0")
+      .attr("font-size", 10)
+      .text(d => `${(d.value / 10000).toFixed(1)}万`);
+
+    // 添加坐标轴
+    const xAxis = d3.axisBottom(xScale);
+    const yAxis = d3.axisLeft(yScale).tickFormat(d => `${(d as number) / 10000}万`);
+
+    g.append("g")
+      .attr("transform", `translate(0,${chartHeight})`)
+      .call(xAxis)
+      .selectAll("text")
+      .attr("fill", "#94a3b8")
+      .attr("font-size", 11)
+      .attr("transform", "rotate(-45)")
+      .attr("text-anchor", "end")
+      .attr("dx", "-0.5em")
+      .attr("dy", "0.5em");
+
+    g.append("g")
+      .call(yAxis)
+      .selectAll("text")
+      .attr("fill", "#94a3b8")
+      .attr("font-size", 11);
+
+    // 标题
+    g.append("text")
+      .attr("x", chartWidth / 2)
+      .attr("y", -20)
+      .attr("text-anchor", "middle")
+      .attr("fill", "#e2e8f0")
+      .attr("font-size", 16)
+      .attr("font-weight", 600)
+      .text(`${currentPoint.year}年房价TOP10`);
   }, [visible, currentIndex]);
 
   const handlePlay = () => {
@@ -166,7 +205,7 @@ function DataStoryBoard({ visible, onClose }: Props) {
         position: 'fixed',
         inset: 0,
         background: 'rgba(0,0,0,0.7)',
-        zIndex: 2000,
+        zIndex: 10001,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -306,15 +345,7 @@ function DataStoryBoard({ visible, onClose }: Props) {
         </div>
 
         {/* 图表 */}
-        <div
-          ref={chartRef}
-          style={{
-            width: '100%',
-            height: 400,
-            background: 'rgba(255,255,255,0.02)',
-            borderRadius: 12
-          }}
-        />
+        <svg ref={svgRef}></svg>
 
         {/* 控制按钮 */}
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'center' }}>
@@ -373,4 +404,3 @@ function DataStoryBoard({ visible, onClose }: Props) {
 }
 
 export default DataStoryBoard;
-
